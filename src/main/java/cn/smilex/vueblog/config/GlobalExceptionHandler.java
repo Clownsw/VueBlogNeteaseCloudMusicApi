@@ -18,13 +18,13 @@ import java.util.Arrays;
 public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public String error(Exception e) {
-        log.error(Arrays.toString(e.getStackTrace()));
+        e.printStackTrace();
         return null;
     }
 
     @ExceptionHandler(JsonProcessingException.class)
     public String error(JsonProcessingException e) {
-        log.error(Arrays.toString(e.getStackTrace()));
+        e.printStackTrace();
         return null;
     }
 }
