@@ -1,0 +1,8 @@
+server:
+  port: 2222
+spring:
+  application:
+    name: VueBlogNeteaseCloudMusicApi
+api:
+  server:
+    url: http://localhost:3000/
