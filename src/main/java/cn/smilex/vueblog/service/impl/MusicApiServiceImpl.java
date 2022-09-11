@@ -17,10 +17,10 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * author smilex
@@ -61,6 +61,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                         )
                         .setMethod(Requests.REQUEST_METHOD.POST)
         ).getBody();
+
         JsonNode root = new ObjectMapper().readTree(body);
         if (root.get("code").asInt() == 20001) {
             emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
@@ -149,10 +150,10 @@ public class MusicApiServiceImpl implements MusicApiService {
         }
 
         var musicList = new ConcurrentLinkedQueue<Music>();
-        var futureList = new LinkedList<Future<?>>();
+        var runnableList = new LinkedList<Callable<Object>>();
 
         for (JsonNode musicInfo : tracks) {
-            futureList.add(THREAD_POOL.submit(() -> {
+            runnableList.add(() -> {
                 try {
                     String musicId = String.valueOf(musicInfo.get("id").asInt());
 
@@ -182,12 +183,10 @@ public class MusicApiServiceImpl implements MusicApiService {
                 } catch (Exception e) {
                     log.error(Arrays.toString(e.getStackTrace()));
                 }
-            }));
+                return null;
+            });
         }
-
-        for (Future<?> o : futureList) {
-            o.get();
-        }
+        THREAD_POOL.invokeAll(runnableList);
 
         return musicList;
     }

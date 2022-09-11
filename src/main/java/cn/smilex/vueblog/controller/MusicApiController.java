@@ -46,7 +46,7 @@ public class MusicApiController {
     }
 
     @GetMapping("/vueblog/playlist/detail")
-    String vueBlogMusicList(@RequestParam(value = "id") String id) throws Exception {
+    public String vueBlogMusicList(@RequestParam(value = "id") String id) throws Exception {
         return new ObjectMapper().writeValueAsString(musicApiService.vueBlogMusicList(id));
     }
 }
