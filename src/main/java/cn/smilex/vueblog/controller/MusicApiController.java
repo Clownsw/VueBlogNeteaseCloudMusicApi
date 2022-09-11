@@ -1,6 +1,8 @@
 package cn.smilex.vueblog.controller;
 
 import cn.smilex.vueblog.service.MusicApiService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,5 +28,25 @@ public class MusicApiController {
     @GetMapping("/search")
     public String search(@RequestParam(value = "keyWords", required = false, defaultValue = "海阔天空") String keyWords) {
         return musicApiService.search(keyWords);
+    }
+
+    @GetMapping("/playlist/detail")
+    public String playListDetail(@RequestParam(value = "id") String id) throws JsonProcessingException {
+        return musicApiService.playListDetail(id);
+    }
+
+    @GetMapping("/lyric")
+    public String lyric(@RequestParam(value = "id") String id) throws JsonProcessingException {
+        return musicApiService.lyric(id);
+    }
+
+    @GetMapping("/song/url/v1")
+    public String newSongUrl(@RequestParam(value = "id") String id) throws JsonProcessingException {
+        return musicApiService.newSongUrl(id);
+    }
+
+    @GetMapping("/vueblog/playlist/detail")
+    String vueBlogMusicList(@RequestParam(value = "id") String id) throws Exception {
+        return new ObjectMapper().writeValueAsString(musicApiService.vueBlogMusicList(id));
     }
 }

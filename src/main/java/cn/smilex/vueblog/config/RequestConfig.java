@@ -19,4 +19,9 @@ import org.springframework.context.annotation.Configuration;
 public class RequestConfig {
     @Value("${api.server.url}")
     private String url;
+    private String cookie;
+    @Value("${api.server.email}")
+    private String email;
+    @Value("${api.server.passWord}")
+    private String passWord;
 }

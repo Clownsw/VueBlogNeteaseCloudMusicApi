@@ -5,4 +5,6 @@ spring:
     name: VueBlogNeteaseCloudMusicApi
 api:
   server:
-    url: http://localhost:3000/
+    url: 'http://localhost:3000/'
+    email: ''
+    passWord: ''
