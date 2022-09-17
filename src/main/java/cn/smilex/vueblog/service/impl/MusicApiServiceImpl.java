@@ -63,23 +63,11 @@ public class MusicApiServiceImpl implements MusicApiService {
 
     @Override
     public String playListDetail(String id) throws JsonProcessingException {
-        String body = Requests.requests.request(
-                HttpRequest.build()
-                        .setUrl(
-                                requestConfig.getUrl() +
-                                        "playlist/detail" +
-                                        "?id=" + id +
-                                        "&cookie=" + requestConfig.getCookie()
-                        )
-                        .setMethod(Requests.REQUEST_METHOD.POST)
-        ).getBody();
-
-        JsonNode root = new ObjectMapper().readTree(body);
-        if (root.get("code").asInt() == 20001) {
-            emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
-            return playListDetail(id);
-        }
-        return body;
+        return commonServiceRequest(
+                requestConfig.getUrl() +
+                        "playlist/detail" +
+                        "?id=" + id
+        );
     }
 
     @Override
@@ -108,65 +96,32 @@ public class MusicApiServiceImpl implements MusicApiService {
 
     @Override
     public String lyric(String id) throws JsonProcessingException {
-        String body = Requests.requests.request(
-                HttpRequest.build()
-                        .setUrl(
-                                requestConfig.getUrl() +
-                                        "lyric" +
-                                        "?id=" + id +
-                                        "&cookie=" + requestConfig.getCookie()
-                        )
-                        .setMethod(Requests.REQUEST_METHOD.POST)
-        ).getBody();
-        JsonNode root = new ObjectMapper().readTree(body);
-        if (root.get("code").asInt() == 20001) {
-            emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
-            return lyric(id);
-        }
-        return body;
+        return commonServiceRequest(
+                requestConfig.getUrl() +
+                        "lyric" +
+                        "?id=" + id
+        );
     }
 
     @Override
     public String newSongUrl(String id, String level) throws JsonProcessingException {
-        String body = Requests.requests.request(
-                HttpRequest.build()
-                        .setUrl(
-                                requestConfig.getUrl() +
-                                        "song/url/v1" +
-                                        "?id=" + id +
-                                        "&level=" + level +
-                                        "&cookie=" + requestConfig.getCookie()
-                        )
-                        .setMethod(Requests.REQUEST_METHOD.POST)
-        ).getBody();
-        JsonNode root = new ObjectMapper().readTree(body);
-        if (root.get("code").asInt() == 20001) {
-            emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
-            return newSongUrl(id, level);
-        }
-        return body;
+        return commonServiceRequest(
+                requestConfig.getUrl() +
+                        "song/url/v1" +
+                        "?id=" + id +
+                        "&level=" + level
+        );
     }
 
     @Override
     public String playListTrackAll(String id, String level, Integer limit, Integer offset) throws JsonProcessingException {
-        String body = Requests.requests.request(
-                HttpRequest.build()
-                        .setUrl(
-                                requestConfig.getUrl() +
-                                        "playlist/track/all" +
-                                        "?id=" + id +
-                                        "&limit=" + limit +
-                                        "&offset=" + offset +
-                                        "&cookie=" + requestConfig.getCookie()
-                        )
-                        .setMethod(Requests.REQUEST_METHOD.POST)
-        ).getBody();
-        JsonNode root = new ObjectMapper().readTree(body);
-        if (root.get("code").asInt() == 20001) {
-            emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
-            return newSongUrl(id, level);
-        }
-        return body;
+        return commonServiceRequest(
+                requestConfig.getUrl() +
+                        "playlist/track/all" +
+                        "?id=" + id +
+                        "&limit=" + limit +
+                        "&offset=" + offset
+        );
     }
 
     @Override
@@ -314,5 +269,21 @@ public class MusicApiServiceImpl implements MusicApiService {
             if (music.getId().equals(id)) return music;
         }
         return null;
+    }
+
+    private String commonServiceRequest(String url) throws JsonProcessingException {
+        String body = Requests.requests.request(
+                HttpRequest.build()
+                        .setUrl(
+                                url + "&cookie=" + requestConfig.getCookie()
+                        )
+                        .setMethod(Requests.REQUEST_METHOD.POST)
+        ).getBody();
+        JsonNode root = new ObjectMapper().readTree(body);
+        if (root.get("code").asInt() == 20001) {
+            emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
+            return commonServiceRequest(url);
+        }
+        return body;
     }
 }
