@@ -19,6 +19,9 @@ public class RequestConfig {
     @Value("${api.server.url}")
     private String url;
 
+    @Value("${api.server.serverUrl}")
+    private String serverUrl;
+
     private String cookie;
 
     @Value("${api.server.email}")

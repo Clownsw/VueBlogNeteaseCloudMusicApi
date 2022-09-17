@@ -157,6 +157,18 @@ public class MusicApiServiceImpl implements MusicApiService {
     }
 
     @Override
+    public String vueBlogLyric(String id) throws JsonProcessingException {
+        String lyric = lyric(id);
+        if (lyric == null) {
+            throw new NullPointerException("");
+        }
+
+        JsonNode root = new ObjectMapper().readTree(lyric);
+        JsonNode lrc = root.get("lrc");
+        return lrc.get("lyric").asText();
+    }
+
+    @Override
     public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) throws Exception {
 
         JsonNode root = new ObjectMapper().readTree(playListTrackAll(id, level, limit, offset));
@@ -193,6 +205,7 @@ public class MusicApiServiceImpl implements MusicApiService {
             music.setId(musicId);
             music.setArtist(arStr.toString().replace("\"", ""));
             music.setCover(musicInfo.get("al").get("picUrl").asText());
+            music.setLrc(requestConfig.getServerUrl() + "api/vueblog/lyric?id=" + musicId);
 
             musicList.add(music);
 

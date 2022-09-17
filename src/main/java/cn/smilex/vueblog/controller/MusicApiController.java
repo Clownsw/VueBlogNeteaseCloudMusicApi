@@ -82,4 +82,9 @@ public class MusicApiController {
                 )
         );
     }
+
+    @GetMapping("/vueblog/lyric")
+    public String vueBlogLyric(@RequestParam(value = "id") String id) throws JsonProcessingException {
+        return musicApiService.vueBlogLyric(id);
+    }
 }

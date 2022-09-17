@@ -6,7 +6,8 @@ spring:
 api:
   server:
     url: 'http://localhost:3000/'
+    serverUrl: ''
     email: ''
     passWord: ''
-    splitCount: 5
+    splitCount: 10
     defaultMusicLevel: 'lossless'

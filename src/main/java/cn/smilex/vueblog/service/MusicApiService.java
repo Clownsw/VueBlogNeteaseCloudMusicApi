@@ -24,4 +24,6 @@ public interface MusicApiService {
     String newSongUrl(String id, String level) throws JsonProcessingException;
 
     String playListTrackAll(String id, String level, Integer limit, Integer offset) throws JsonProcessingException;
+
+    String vueBlogLyric(String id) throws JsonProcessingException;
 }
