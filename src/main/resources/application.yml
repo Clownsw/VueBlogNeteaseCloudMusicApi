@@ -7,12 +7,15 @@ spring:
     url: 127.0.0.1
     port: 6379
     database: 0
+    password: ''
     lettuce:
       pool:
         max-active: 8
         max-wait: 1
         max-idle: 8
-        min-idle: 0
+        min-idle: 2
+    client-type: lettuce
+
 api:
   server:
     url: 'http://localhost:3000/'
@@ -22,7 +25,7 @@ api:
     splitCount: 10
     defaultMusicLevel: 'lossless'
     # nanos、millis、minutes、seconds、hours、days
-    redisTtlType: 'hours'
+    redisTtlType: HOURS
     redisTtl: 1
     redisMusicInfoCachePrefix: 'vueblog:music:list:'
     redisLyricCachePrefix: 'vueblog:lyric:list:'

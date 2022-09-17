@@ -4,6 +4,7 @@ import cn.smilex.req.Cookie;
 import cn.smilex.req.HttpRequest;
 import cn.smilex.req.HttpResponse;
 import cn.smilex.req.Requests;
+import cn.smilex.vueblog.config.RedisTtlType;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
 import cn.smilex.vueblog.service.MusicApiService;
@@ -25,8 +26,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static cn.smilex.vueblog.config.RedisTtlType.*;
 
 /**
  * @author smilex
@@ -220,12 +219,10 @@ public class MusicApiServiceImpl implements MusicApiService {
     }
 
     private Duration parseRedisTtlType() {
-        String redisTtlType = requestConfig.getRedisTtlType();
-        if (redisTtlType == null || redisTtlType.isBlank()) throw new NullPointerException();
-
+        RedisTtlType redisTtlType = requestConfig.getRedisTtlType();
         Duration ttl;
 
-        switch (redisTtlType.toLowerCase()) {
+        switch (redisTtlType) {
             case NANOS: {
                 ttl = Duration.ofNanos(requestConfig.getRedisTtl());
                 break;

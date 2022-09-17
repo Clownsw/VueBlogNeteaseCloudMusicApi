@@ -37,7 +37,7 @@ public class RequestConfig {
     private String defaultMusicLevel;
 
     @Value("${api.server.redisTtlType}")
-    private String redisTtlType;
+    private RedisTtlType redisTtlType;
 
     @Value("${api.server.redisTtl}")
     private Long redisTtl;
