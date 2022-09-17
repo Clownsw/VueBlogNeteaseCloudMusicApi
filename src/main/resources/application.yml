@@ -8,3 +8,5 @@ api:
     url: 'http://localhost:3000/'
     email: ''
     passWord: ''
+    splitCount: 5
+    defaultMusicLevel: 'lossless'

@@ -5,11 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.util.Arrays;
-
 /**
- * author smilex
- *
+ * @author smilex
  * @date 2022/9/11/18:53
  * @since 1.0
  */

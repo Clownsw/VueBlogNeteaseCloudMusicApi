@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -23,8 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * author smilex
- *
+ * @author smilex
  * @date 2022/9/11/18:15
  * @since 1.0
  */
@@ -115,14 +114,14 @@ public class MusicApiServiceImpl implements MusicApiService {
     }
 
     @Override
-    public String newSongUrl(String id) throws JsonProcessingException {
+    public String newSongUrl(String id, String level) throws JsonProcessingException {
         String body = Requests.requests.request(
                 HttpRequest.build()
                         .setUrl(
                                 requestConfig.getUrl() +
                                         "song/url/v1" +
                                         "?id=" + id +
-                                        "&level=lossless" +
+                                        "&level=" + level +
                                         "&cookie=" + requestConfig.getCookie()
                         )
                         .setMethod(Requests.REQUEST_METHOD.POST)
@@ -130,64 +129,107 @@ public class MusicApiServiceImpl implements MusicApiService {
         JsonNode root = new ObjectMapper().readTree(body);
         if (root.get("code").asInt() == 20001) {
             emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
-            return newSongUrl(id);
+            return newSongUrl(id, level);
         }
         return body;
     }
 
     @Override
-    public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id) throws Exception {
+    public String playListTrackAll(String id, String level, Integer limit, Integer offset) throws JsonProcessingException {
+        String body = Requests.requests.request(
+                HttpRequest.build()
+                        .setUrl(
+                                requestConfig.getUrl() +
+                                        "playlist/track/all" +
+                                        "?id=" + id +
+                                        "&limit=" + limit +
+                                        "&offset=" + offset +
+                                        "&cookie=" + requestConfig.getCookie()
+                        )
+                        .setMethod(Requests.REQUEST_METHOD.POST)
+        ).getBody();
+        JsonNode root = new ObjectMapper().readTree(body);
+        if (root.get("code").asInt() == 20001) {
+            emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
+            return newSongUrl(id, level);
+        }
+        return body;
+    }
 
-        JsonNode root = new ObjectMapper().readTree(playListDetail(id));
+    @Override
+    public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) throws Exception {
+
+        JsonNode root = new ObjectMapper().readTree(playListTrackAll(id, level, limit, offset));
         if (root.get("code").asInt() != 200) {
             throw new RuntimeException("获取歌单列表失败!");
         }
 
-        JsonNode tracks = root.get("playlist")
-                .get("tracks");
-        if (tracks.size() == 0) {
+        JsonNode songs = root.get("songs");
+        if (songs.size() == 0) {
             return new ConcurrentLinkedQueue<>();
         }
 
         var musicList = new ConcurrentLinkedQueue<Music>();
+        var idParamList = new ConcurrentLinkedQueue<String>();
         var runnableList = new LinkedList<Callable<Object>>();
 
-        for (JsonNode musicInfo : tracks) {
+        StringBuilder paramsString = new StringBuilder();
+
+        for (int i = 0; i < songs.size(); i++) {
+            JsonNode musicInfo = songs.get(i);
+            Long musicId = musicInfo.get("id").asLong();
+
+            StringBuilder arStr = new StringBuilder();
+            JsonNode ar = musicInfo.get("ar");
+            for (JsonNode arNode : ar) {
+                arStr.append(arNode.get("name"))
+                        .append(" ");
+            }
+            int arIndex = arStr.lastIndexOf(" ");
+            arStr.replace(arIndex, arIndex + 1, "");
+
+            Music music = new Music();
+            music.setName(musicInfo.get("name").asText());
+            music.setId(musicId);
+            music.setArtist(arStr.toString().replace("\"", ""));
+            music.setCover(musicInfo.get("al").get("picUrl").asText());
+
+            musicList.add(music);
+
+            paramsString.append(musicId)
+                    .append(",");
+            if ((i + 1) % requestConfig.getSplitCount() == 0 || (i + 1) == songs.size()) {
+                int index = paramsString.lastIndexOf(",");
+                if (index != -1) paramsString.replace(index, index + 1, "");
+                idParamList.add(paramsString.toString());
+                paramsString = new StringBuilder();
+            }
+        }
+
+        for (String idParam : idParamList) {
             runnableList.add(() -> {
-                try {
-                    String musicId = String.valueOf(musicInfo.get("id").asInt());
-
-                    Music music = new Music();
-                    music.setName(musicInfo.get("name").asText());
-
-                    StringBuilder arStr = new StringBuilder();
-                    JsonNode ar = musicInfo.get("ar");
-                    for (JsonNode arNode : ar) {
-                        arStr.append(arNode.get("name"))
-                                .append(" ");
+                String responseJson = newSongUrl(idParam, level);
+                JsonNode idParamRoot = new ObjectMapper().readTree(responseJson);
+                JsonNode idParamRootDataList = idParamRoot.get("data");
+                for (JsonNode idParamRootData : idParamRootDataList) {
+                    Music music = getMusicInListById(idParamRootData.get("id").asLong(), musicList);
+                    if (music != null) {
+                        music.setUrl(idParamRootData.get("url").asText());
                     }
-                    int index = arStr.lastIndexOf(" ");
-                    arStr.replace(index, index + 1, "");
-                    music.setArtist(arStr.toString().replace("\"", ""));
-
-                    music.setCover(musicInfo.get("al").get("picUrl").asText());
-
-                    JsonNode urlRoot = new ObjectMapper().readTree(newSongUrl(musicId));
-                    music.setUrl(urlRoot.get("data").get(0).get("url").asText());
-
-                    String lyric = lyric(musicId);
-                    JsonNode lyricRoot = new ObjectMapper().readTree(lyric);
-                    music.setLrc(lyricRoot.get("lrc").get("lyric").asText());
-
-                    musicList.add(music);
-                } catch (Exception e) {
-                    log.error(Arrays.toString(e.getStackTrace()));
                 }
                 return null;
             });
         }
         THREAD_POOL.invokeAll(runnableList);
-
         return musicList;
+    }
+
+    private Music getMusicInListById(Long id, Collection<Music> list) {
+        for (Music music : list) {
+            if (music.getId().equals(id)) {
+                return music;
+            }
+        }
+        return null;
     }
 }
