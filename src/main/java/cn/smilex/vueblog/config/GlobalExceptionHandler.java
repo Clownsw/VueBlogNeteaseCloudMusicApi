@@ -1,9 +1,14 @@
 package cn.smilex.vueblog.config;
 
+import cn.smilex.vueblog.model.Result;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.Arrays;
 
 /**
  * @author smilex
@@ -13,15 +18,18 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @SneakyThrows
     @ExceptionHandler(Exception.class)
     public String error(Exception e) {
-        e.printStackTrace();
-        return null;
+        log.error(Arrays.toString(e.getStackTrace()));
+        return new ObjectMapper().writeValueAsString(Result.error("unknow error"));
     }
 
+    @SneakyThrows
     @ExceptionHandler(JsonProcessingException.class)
     public String error(JsonProcessingException e) {
-        e.printStackTrace();
-        return null;
+        log.error(Arrays.toString(e.getStackTrace()));
+        return new ObjectMapper().writeValueAsString(Result.error("system inner error"));
     }
 }
