@@ -8,12 +8,16 @@ import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
 import cn.smilex.vueblog.service.MusicApiService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,6 +25,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static cn.smilex.vueblog.config.RedisTtlType.*;
 
 /**
  * @author smilex
@@ -34,9 +40,16 @@ public class MusicApiServiceImpl implements MusicApiService {
     private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(2);
     private RequestConfig requestConfig;
 
+    private RedisTemplate<String, String> redisTemplate;
+
     @Autowired
     public void setRequestConfig(RequestConfig requestConfig) {
         this.requestConfig = requestConfig;
+    }
+
+    @Autowired
+    public void setRedisTemplate(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -158,28 +171,36 @@ public class MusicApiServiceImpl implements MusicApiService {
 
     @Override
     public String vueBlogLyric(String id) throws JsonProcessingException {
-        String lyric = lyric(id);
-        if (lyric == null) {
-            throw new NullPointerException("");
-        }
+        ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
 
-        JsonNode root = new ObjectMapper().readTree(lyric);
+        String cacheValue = valueOperations.get(requestConfig.getRedisLyricCachePrefix() + id);
+        if (cacheValue != null) return cacheValue;
+
+        String lyricJson = lyric(id);
+        if (lyricJson == null) throw new NullPointerException("");
+
+        JsonNode root = new ObjectMapper().readTree(lyricJson);
         JsonNode lrc = root.get("lrc");
-        return lrc.get("lyric").asText();
+        String lyric = lrc.get("lyric").asText();
+        valueOperations.set(requestConfig.getRedisLyricCachePrefix() + id, lyric, Duration.ofDays(7));
+        return lyric;
     }
 
     @Override
     public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) throws Exception {
+        ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
+
+        String cacheValue = valueOperations.get(requestConfig.getRedisMusicInfoCachePrefix() + id);
+        if (cacheValue != null) {
+            return new ObjectMapper().readValue(cacheValue, new TypeReference<>() {
+            });
+        }
 
         JsonNode root = new ObjectMapper().readTree(playListTrackAll(id, level, limit, offset));
-        if (root.get("code").asInt() != 200) {
-            throw new RuntimeException("获取歌单列表失败!");
-        }
+        if (root.get("code").asInt() != 200) throw new RuntimeException("获取歌单列表失败!");
 
         JsonNode songs = root.get("songs");
-        if (songs.size() == 0) {
-            return new ConcurrentLinkedQueue<>();
-        }
+        if (songs.size() == 0) return new ConcurrentLinkedQueue<>();
 
         var musicList = new ConcurrentLinkedQueue<Music>();
         var idParamList = new ConcurrentLinkedQueue<String>();
@@ -234,14 +255,63 @@ public class MusicApiServiceImpl implements MusicApiService {
             });
         }
         THREAD_POOL.invokeAll(runnableList);
+
+        valueOperations.set(
+                requestConfig.getRedisMusicInfoCachePrefix() + id,
+                new ObjectMapper().writeValueAsString(musicList),
+                parseRedisTtlType()
+        );
         return musicList;
+    }
+
+    private Duration parseRedisTtlType() {
+        String redisTtlType = requestConfig.getRedisTtlType();
+        if (redisTtlType == null || redisTtlType.isBlank()) throw new NullPointerException();
+
+        Duration ttl;
+
+        switch (redisTtlType.toLowerCase()) {
+            case NANOS: {
+                ttl = Duration.ofNanos(requestConfig.getRedisTtl());
+                break;
+            }
+
+            case MILLLIS: {
+                ttl = Duration.ofMillis(requestConfig.getRedisTtl());
+                break;
+            }
+
+            case MINUTES: {
+                ttl = Duration.ofMinutes(requestConfig.getRedisTtl());
+                break;
+            }
+
+            case SECONDS: {
+                ttl = Duration.ofSeconds(requestConfig.getRedisTtl());
+                break;
+            }
+
+            case HOURS: {
+                ttl = Duration.ofHours(requestConfig.getRedisTtl());
+                break;
+            }
+
+            case DAYS: {
+                ttl = Duration.ofDays(requestConfig.getRedisTtl());
+                break;
+            }
+
+            default: {
+                throw new NullPointerException();
+            }
+        }
+
+        return ttl;
     }
 
     private Music getMusicInListById(Long id, Collection<Music> list) {
         for (Music music : list) {
-            if (music.getId().equals(id)) {
-                return music;
-            }
+            if (music.getId().equals(id)) return music;
         }
         return null;
     }

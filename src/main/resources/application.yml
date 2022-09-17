@@ -3,6 +3,16 @@ server:
 spring:
   application:
     name: VueBlogNeteaseCloudMusicApi
+  redis:
+    url: 127.0.0.1
+    port: 6379
+    database: 0
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: 1
+        max-idle: 8
+        min-idle: 0
 api:
   server:
     url: 'http://localhost:3000/'
@@ -11,3 +21,8 @@ api:
     passWord: ''
     splitCount: 10
     defaultMusicLevel: 'lossless'
+    # nanos、millis、minutes、seconds、hours、days
+    redisTtlType: 'hours'
+    redisTtl: 1
+    redisMusicInfoCachePrefix: 'vueblog:music:list:'
+    redisLyricCachePrefix: 'vueblog:lyric:list:'

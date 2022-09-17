@@ -35,4 +35,16 @@ public class RequestConfig {
 
     @Value("${api.server.defaultMusicLevel}")
     private String defaultMusicLevel;
+
+    @Value("${api.server.redisTtlType}")
+    private String redisTtlType;
+
+    @Value("${api.server.redisTtl}")
+    private Long redisTtl;
+
+    @Value("${api.server.redisMusicInfoCachePrefix}")
+    private String redisMusicInfoCachePrefix;
+
+    @Value("${api.server.redisLyricCachePrefix}")
+    private String redisLyricCachePrefix;
 }
