@@ -32,7 +32,7 @@ import java.util.concurrent.Executors;
 @Service
 public class MusicApiServiceImpl implements MusicApiService {
 
-    private static final ExecutorService THREAD_POOL = Executors.newVirtualThreadPerTaskExecutor();
+    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(2);
     private RequestConfig requestConfig;
 
     @Autowired
