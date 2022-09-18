@@ -101,4 +101,9 @@ public class MusicApiController {
                 )
         );
     }
+
+    @GetMapping("/kuwo/song/url")
+    public String kuWoSongUrl(@RequestParam(value = "id") String id) {
+        return musicApiService.kuWoSongUrl(id);
+    }
 }

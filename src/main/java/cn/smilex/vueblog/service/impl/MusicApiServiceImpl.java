@@ -19,8 +19,11 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author smilex
@@ -34,6 +37,12 @@ public class MusicApiServiceImpl implements MusicApiService {
     private RequestConfig requestConfig;
 
     private RedisTemplate<String, String> redisTemplate;
+
+    private static final HashMap<String, String> DEFAULT_REQUEST_HEADER = new HashMap<>();
+
+    static {
+        DEFAULT_REQUEST_HEADER.put("Content-type", "application/x-www-form-urlencoded");
+    }
 
     @Autowired
     public void setRequestConfig(RequestConfig requestConfig) {
@@ -125,7 +134,7 @@ public class MusicApiServiceImpl implements MusicApiService {
         if (cacheValue != null) return cacheValue;
 
         String lyricJson = lyric(id);
-        if (lyricJson == null) throw new NullPointerException("");
+        if (lyricJson == null) throw new RuntimeException("not found!");
 
         JsonNode root = new ObjectMapper().readTree(lyricJson);
         JsonNode lrc = root.get("lrc");
@@ -149,6 +158,25 @@ public class MusicApiServiceImpl implements MusicApiService {
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
         return url;
+    }
+
+    @Override
+    public String kuWoSongUrl(String id) {
+        HttpRequest request = HttpRequest.build()
+                .setUrl("https://peng3.com/vip/kuwo/")
+                .setHeaders(DEFAULT_REQUEST_HEADER)
+                .setMethod(Requests.REQUEST_METHOD.POST)
+                .setBody("id=" + id + "&class=mp3");
+        HttpResponse response = Requests.requests.request(request);
+        String body = response.getBody();
+        if (body.contains("解析成功")) {
+            Pattern compile = Pattern.compile("\\bhttp://(.*?)\\.mp3\\b");
+            Matcher matcher = compile.matcher(body);
+            if (matcher.find()) {
+                return matcher.group(0);
+            }
+        }
+        throw new RuntimeException("not found!");
     }
 
     @Override
@@ -237,7 +265,7 @@ public class MusicApiServiceImpl implements MusicApiService {
             }
 
             default: {
-                throw new NullPointerException();
+                throw new RuntimeException("unknown redis ttl type");
             }
         }
 

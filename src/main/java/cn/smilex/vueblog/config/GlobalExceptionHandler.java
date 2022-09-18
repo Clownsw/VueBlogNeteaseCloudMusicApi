@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.Arrays;
 
@@ -20,13 +21,15 @@ import java.util.Arrays;
 public class GlobalExceptionHandler {
 
     @SneakyThrows
+    @ResponseBody
     @ExceptionHandler(Exception.class)
     public String error(Exception e) {
         log.error(Arrays.toString(e.getStackTrace()));
-        return new ObjectMapper().writeValueAsString(Result.error("unknow error"));
+        return new ObjectMapper().writeValueAsString(Result.error("unknown error"));
     }
 
     @SneakyThrows
+    @ResponseBody
     @ExceptionHandler(JsonProcessingException.class)
     public String error(JsonProcessingException e) {
         log.error(Arrays.toString(e.getStackTrace()));

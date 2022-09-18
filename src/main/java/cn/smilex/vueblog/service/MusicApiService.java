@@ -28,4 +28,6 @@ public interface MusicApiService {
     String vueBlogLyric(String id) throws JsonProcessingException;
 
     String vueBlogSongUrl(String id, String level) throws JsonProcessingException;
+
+    String kuWoSongUrl(String id);
 }
