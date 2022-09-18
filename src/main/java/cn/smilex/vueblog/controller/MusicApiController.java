@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * author smilex
@@ -86,5 +87,18 @@ public class MusicApiController {
     @GetMapping("/vueblog/lyric")
     public String vueBlogLyric(@RequestParam(value = "id") String id) throws JsonProcessingException {
         return musicApiService.vueBlogLyric(id);
+    }
+
+    @GetMapping("/vueblog/song/url")
+    public ModelAndView vueBlogSongUrl(
+            @RequestParam(value = "id") String id,
+            @RequestParam(value = "level", required = false) String level
+    ) throws JsonProcessingException {
+        return new ModelAndView(
+                "redirect:" + musicApiService.vueBlogSongUrl(
+                        id,
+                        level == null ? requestConfig.getDefaultMusicLevel() : level
+                )
+        );
     }
 }

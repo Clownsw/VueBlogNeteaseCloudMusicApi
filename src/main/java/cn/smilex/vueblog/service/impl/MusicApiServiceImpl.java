@@ -19,13 +19,8 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author smilex
@@ -36,7 +31,6 @@ import java.util.concurrent.Executors;
 @Service
 public class MusicApiServiceImpl implements MusicApiService {
 
-    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(2);
     private RequestConfig requestConfig;
 
     private RedisTemplate<String, String> redisTemplate;
@@ -141,6 +135,23 @@ public class MusicApiServiceImpl implements MusicApiService {
     }
 
     @Override
+    public String vueBlogSongUrl(String id, String level) throws JsonProcessingException {
+        ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
+
+        String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
+        if (cacheValue != null) return cacheValue;
+
+        String songJson = newSongUrl(id, level);
+        JsonNode root = new ObjectMapper().readTree(songJson);
+        String url = root.get("data")
+                .get(0)
+                .get("url").asText();
+
+        valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
+        return url;
+    }
+
+    @Override
     public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) throws Exception {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
 
@@ -157,10 +168,6 @@ public class MusicApiServiceImpl implements MusicApiService {
         if (songs.size() == 0) return new ConcurrentLinkedQueue<>();
 
         var musicList = new ConcurrentLinkedQueue<Music>();
-        var idParamList = new ConcurrentLinkedQueue<String>();
-        var runnableList = new LinkedList<Callable<Object>>();
-
-        StringBuilder paramsString = new StringBuilder();
 
         for (int i = 0; i < songs.size(); i++) {
             JsonNode musicInfo = songs.get(i);
@@ -181,34 +188,10 @@ public class MusicApiServiceImpl implements MusicApiService {
             music.setArtist(arStr.toString().replace("\"", ""));
             music.setCover(musicInfo.get("al").get("picUrl").asText());
             music.setLrc(requestConfig.getServerUrl() + "api/vueblog/lyric?id=" + musicId);
+            music.setUrl(requestConfig.getServerUrl() + "api/vueblog/song/url?id=" + musicId);
 
             musicList.add(music);
-
-            paramsString.append(musicId)
-                    .append(",");
-            if ((i + 1) % requestConfig.getSplitCount() == 0 || (i + 1) == songs.size()) {
-                int index = paramsString.lastIndexOf(",");
-                if (index != -1) paramsString.replace(index, index + 1, "");
-                idParamList.add(paramsString.toString());
-                paramsString = new StringBuilder();
-            }
         }
-
-        for (String idParam : idParamList) {
-            runnableList.add(() -> {
-                String responseJson = newSongUrl(idParam, level);
-                JsonNode idParamRoot = new ObjectMapper().readTree(responseJson);
-                JsonNode idParamRootDataList = idParamRoot.get("data");
-                for (JsonNode idParamRootData : idParamRootDataList) {
-                    Music music = getMusicInListById(idParamRootData.get("id").asLong(), musicList);
-                    if (music != null) {
-                        music.setUrl(idParamRootData.get("url").asText());
-                    }
-                }
-                return null;
-            });
-        }
-        THREAD_POOL.invokeAll(runnableList);
 
         valueOperations.set(
                 requestConfig.getRedisMusicInfoCachePrefix() + id,
@@ -259,13 +242,6 @@ public class MusicApiServiceImpl implements MusicApiService {
         }
 
         return ttl;
-    }
-
-    private Music getMusicInListById(Long id, Collection<Music> list) {
-        for (Music music : list) {
-            if (music.getId().equals(id)) return music;
-        }
-        return null;
     }
 
     private String commonServiceRequest(String url) throws JsonProcessingException {
