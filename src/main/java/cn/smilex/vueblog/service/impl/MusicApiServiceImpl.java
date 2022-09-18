@@ -12,12 +12,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -39,9 +42,19 @@ public class MusicApiServiceImpl implements MusicApiService {
     private RedisTemplate<String, String> redisTemplate;
 
     private static final HashMap<String, String> DEFAULT_REQUEST_HEADER = new HashMap<>();
+    private static final HashMap<String, String> KUWO_REQUEST_HEADER = new HashMap<>();
+
+    private static final String KUWO_SEARCH_API = "http://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key=%s&pn=%d&rn=%d";
 
     static {
         DEFAULT_REQUEST_HEADER.put("Content-type", "application/x-www-form-urlencoded");
+        KUWO_REQUEST_HEADER.put("Accept", "application/json, text/plain, */*");
+        KUWO_REQUEST_HEADER.put("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
+        KUWO_REQUEST_HEADER.put("Connection", "keep-alive");
+        KUWO_REQUEST_HEADER.put("Cookie", "kw_token=OG5MLTOUW8");
+        KUWO_REQUEST_HEADER.put("Referer", "http://www.kuwo.cn/search/list?key=why");
+        KUWO_REQUEST_HEADER.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36");
+        KUWO_REQUEST_HEADER.put("csrf", "OG5MLTOUW8");
     }
 
     @Autowired
@@ -177,6 +190,23 @@ public class MusicApiServiceImpl implements MusicApiService {
             }
         }
         throw new RuntimeException("not found!");
+    }
+
+    @SneakyThrows
+    @Override
+    public String kuWoSearch(String key, Integer pn, Integer fn) {
+        String body = Requests.requests.request(
+                HttpRequest.build()
+                        .setUrl(String.format(KUWO_SEARCH_API, URLEncoder.encode(key, StandardCharsets.UTF_8), pn, fn))
+                        .setMethod(Requests.REQUEST_METHOD.GET)
+                        .setHeaders(KUWO_REQUEST_HEADER)
+        ).getBody();
+        JsonNode root = new ObjectMapper().readTree(body);
+        JsonNode success = root.get("success");
+        if (success != null && !success.asBoolean()) {
+            return kuWoSearch(key, pn, fn);
+        }
+        return body;
     }
 
     @Override

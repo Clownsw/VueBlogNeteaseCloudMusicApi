@@ -102,6 +102,15 @@ public class MusicApiController {
         );
     }
 
+    @GetMapping("/kuwo/search")
+    public String kuWoSearch(
+            @RequestParam(value = "key", required = false, defaultValue = "Why") String key,
+            @RequestParam(value = "pn", required = false, defaultValue = "1") Integer pn,
+            @RequestParam(value = "fn", required = false, defaultValue = "30") Integer fn
+    ) {
+        return musicApiService.kuWoSearch(key, pn, fn);
+    }
+
     @GetMapping("/kuwo/song/url")
     public String kuWoSongUrl(@RequestParam(value = "id") String id) {
         return musicApiService.kuWoSongUrl(id);
