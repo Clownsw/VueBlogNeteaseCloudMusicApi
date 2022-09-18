@@ -2,7 +2,6 @@ package cn.smilex.vueblog.controller;
 
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.service.MusicApiService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +39,7 @@ public class MusicApiController {
     }
 
     @GetMapping("/playlist/detail")
-    public String playListDetail(@RequestParam(value = "id") String id) throws JsonProcessingException {
+    public String playListDetail(@RequestParam(value = "id") String id) {
         return musicApiService.playListDetail(id);
     }
 
@@ -50,12 +49,12 @@ public class MusicApiController {
             @RequestParam(value = "level", required = false) String level,
             @RequestParam(value = "limit", required = false, defaultValue = "10") Integer limit,
             @RequestParam(value = "offset", required = false, defaultValue = "1") Integer offset
-    ) throws JsonProcessingException {
+    ) {
         return musicApiService.playListTrackAll(id, level == null ? requestConfig.getDefaultMusicLevel() : level, limit, offset);
     }
 
     @GetMapping("/lyric")
-    public String lyric(@RequestParam(value = "id") String id) throws JsonProcessingException {
+    public String lyric(@RequestParam(value = "id") String id) {
         return musicApiService.lyric(id);
     }
 
@@ -63,8 +62,13 @@ public class MusicApiController {
     public String newSongUrl(
             @RequestParam(value = "id") String id,
             @RequestParam(value = "level", required = false) String level
-    ) throws JsonProcessingException {
+    ) {
         return musicApiService.newSongUrl(id, level == null ? requestConfig.getDefaultMusicLevel() : level);
+    }
+
+    @GetMapping("/song/detail")
+    public String songDetail(@RequestParam(value = "id") String id) {
+        return musicApiService.songDetail(id);
     }
 
     @GetMapping("/vueblog/playlist/detail")
@@ -85,7 +89,7 @@ public class MusicApiController {
     }
 
     @GetMapping("/vueblog/lyric")
-    public String vueBlogLyric(@RequestParam(value = "id") String id) throws JsonProcessingException {
+    public String vueBlogLyric(@RequestParam(value = "id") String id) {
         return musicApiService.vueBlogLyric(id);
     }
 
@@ -93,7 +97,7 @@ public class MusicApiController {
     public ModelAndView vueBlogSongUrl(
             @RequestParam(value = "id") String id,
             @RequestParam(value = "level", required = false) String level
-    ) throws JsonProcessingException {
+    ) {
         return new ModelAndView(
                 "redirect:" + musicApiService.vueBlogSongUrl(
                         id,

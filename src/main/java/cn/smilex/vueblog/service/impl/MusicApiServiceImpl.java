@@ -8,7 +8,6 @@ import cn.smilex.vueblog.config.RedisTtlType;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
 import cn.smilex.vueblog.service.MusicApiService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,8 +75,9 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    @SneakyThrows
     @Override
-    public String playListDetail(String id) throws JsonProcessingException {
+    public String playListDetail(String id) {
         return commonServiceRequest(
                 requestConfig.getUrl() +
                         "playlist/detail" +
@@ -109,8 +109,9 @@ public class MusicApiServiceImpl implements MusicApiService {
         requestConfig.setCookie(cookieString.toString());
     }
 
+    @SneakyThrows
     @Override
-    public String lyric(String id) throws JsonProcessingException {
+    public String lyric(String id) {
         return commonServiceRequest(
                 requestConfig.getUrl() +
                         "lyric" +
@@ -118,8 +119,9 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    @SneakyThrows
     @Override
-    public String newSongUrl(String id, String level) throws JsonProcessingException {
+    public String newSongUrl(String id, String level) {
         return commonServiceRequest(
                 requestConfig.getUrl() +
                         "song/url/v1" +
@@ -128,8 +130,9 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    @SneakyThrows
     @Override
-    public String playListTrackAll(String id, String level, Integer limit, Integer offset) throws JsonProcessingException {
+    public String playListTrackAll(String id, String level, Integer limit, Integer offset) {
         return commonServiceRequest(
                 requestConfig.getUrl() +
                         "playlist/track/all" +
@@ -139,8 +142,9 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    @SneakyThrows
     @Override
-    public String vueBlogLyric(String id) throws JsonProcessingException {
+    public String vueBlogLyric(String id) {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
 
         String cacheValue = valueOperations.get(requestConfig.getRedisLyricCachePrefix() + id);
@@ -156,18 +160,40 @@ public class MusicApiServiceImpl implements MusicApiService {
         return lyric;
     }
 
+    @SneakyThrows
     @Override
-    public String vueBlogSongUrl(String id, String level) throws JsonProcessingException {
+    public String vueBlogSongUrl(String id, String level) {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
         if (cacheValue != null) return cacheValue;
 
+        String url;
         String songJson = newSongUrl(id, level);
         JsonNode root = new ObjectMapper().readTree(songJson);
-        String url = root.get("data")
-                .get(0)
-                .get("url").asText();
+        JsonNode temp = root.get("data")
+                .get(0);
+        if (!temp.get("freeTrialInfo").isNull()) {
+            String kuWoSearchJson = kuWoSearch(
+                    new ObjectMapper()
+                            .readTree(songDetail(id))
+                            .get("songs")
+                            .get(0)
+                            .get("name")
+                            .asText(),
+                    1,
+                    1
+            );
+            JsonNode kuWoSearchJsonRoot = new ObjectMapper().readTree(kuWoSearchJson);
+            String kuWoMusicId = kuWoSearchJsonRoot.get("data")
+                    .get("list")
+                    .get(0)
+                    .get("musicrid")
+                    .asText();
+            url = kuWoSongUrl(kuWoMusicId.replace("MUSIC_", ""));
+        } else {
+            url = temp.get("url").asText();
+        }
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
         return url;
@@ -210,7 +236,17 @@ public class MusicApiServiceImpl implements MusicApiService {
     }
 
     @Override
-    public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) throws Exception {
+    public String songDetail(String id) {
+        return commonServiceRequest(
+                requestConfig.getUrl() +
+                        "song/detail" +
+                        "?ids=" + id
+        );
+    }
+
+    @SneakyThrows
+    @Override
+    public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicInfoCachePrefix() + id);
@@ -302,7 +338,8 @@ public class MusicApiServiceImpl implements MusicApiService {
         return ttl;
     }
 
-    private String commonServiceRequest(String url) throws JsonProcessingException {
+    @SneakyThrows
+    private String commonServiceRequest(String url) {
         String body = Requests.requests.request(
                 HttpRequest.build()
                         .setUrl(

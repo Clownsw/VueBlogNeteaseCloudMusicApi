@@ -1,7 +1,6 @@
 package cn.smilex.vueblog.service;
 
 import cn.smilex.vueblog.model.Music;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -15,21 +14,23 @@ public interface MusicApiService {
 
     void emailLogin(String email, String passWord);
 
-    String playListDetail(String id) throws JsonProcessingException;
+    String playListDetail(String id);
 
-    ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) throws Exception;
+    ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset);
 
-    String lyric(String id) throws JsonProcessingException;
+    String lyric(String id);
 
-    String newSongUrl(String id, String level) throws JsonProcessingException;
+    String newSongUrl(String id, String level);
 
-    String playListTrackAll(String id, String level, Integer limit, Integer offset) throws JsonProcessingException;
+    String playListTrackAll(String id, String level, Integer limit, Integer offset);
 
-    String vueBlogLyric(String id) throws JsonProcessingException;
+    String vueBlogLyric(String id);
 
-    String vueBlogSongUrl(String id, String level) throws JsonProcessingException;
+    String vueBlogSongUrl(String id, String level);
 
     String kuWoSongUrl(String id);
 
     String kuWoSearch(String key, Integer pn, Integer fn);
+
+    String songDetail(String id);
 }
