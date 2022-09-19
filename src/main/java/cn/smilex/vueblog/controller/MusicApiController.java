@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * author smilex
- *
+ * @author smilex
  * @date 2022/9/11/18:13
  * @since 1.0
  */

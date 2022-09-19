@@ -30,3 +30,4 @@ api:
     redisMusicInfoCachePrefix: 'vueblog:music:list:'
     redisLyricCachePrefix: 'vueblog:lyric:list:'
     redisMusicUrlCachePrefix: 'vueblog:music:url:list:'
+    redisNetEaseCloudCache: 'vueblog:music:netease:id:list'

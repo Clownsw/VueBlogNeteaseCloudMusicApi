@@ -4,10 +4,11 @@ import cn.smilex.req.Cookie;
 import cn.smilex.req.HttpRequest;
 import cn.smilex.req.HttpResponse;
 import cn.smilex.req.Requests;
-import cn.smilex.vueblog.config.RedisTtlType;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
+import cn.smilex.vueblog.model.MusicDto;
 import cn.smilex.vueblog.service.MusicApiService;
+import cn.smilex.vueblog.util.CommonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +16,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
@@ -36,13 +38,14 @@ import java.util.regex.Pattern;
 @Service
 public class MusicApiServiceImpl implements MusicApiService {
 
-    private RequestConfig requestConfig;
-
     private RedisTemplate<String, String> redisTemplate;
+    private RequestConfig requestConfig;
+    private CommonUtil commonUtil;
 
     private static final HashMap<String, String> DEFAULT_REQUEST_HEADER = new HashMap<>();
     private static final HashMap<String, String> KUWO_REQUEST_HEADER = new HashMap<>();
 
+    private static final String KUWO_SEARCH_PATTERN = "\\bhttp://(.*?)\\.mp3\\b";
     private static final String KUWO_SEARCH_API = "http://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key=%s&pn=%d&rn=%d";
 
     static {
@@ -56,16 +59,28 @@ public class MusicApiServiceImpl implements MusicApiService {
         KUWO_REQUEST_HEADER.put("csrf", "OG5MLTOUW8");
     }
 
-    @Autowired
-    public void setRequestConfig(RequestConfig requestConfig) {
-        this.requestConfig = requestConfig;
-    }
 
     @Autowired
     public void setRedisTemplate(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
+    @Autowired
+    public void setRequestConfig(RequestConfig requestConfig) {
+        this.requestConfig = requestConfig;
+    }
+
+    @Autowired
+    public void setCommonUtil(CommonUtil commonUtil) {
+        this.commonUtil = commonUtil;
+    }
+
+    /**
+     * 网易云音乐搜索
+     *
+     * @param keyWords 关键字
+     * @return json
+     */
     @Override
     public String search(String keyWords) {
         return Requests.requests.fast_get(
@@ -109,6 +124,12 @@ public class MusicApiServiceImpl implements MusicApiService {
         requestConfig.setCookie(cookieString.toString());
     }
 
+    /**
+     * 网易云音乐歌词获取
+     *
+     * @param id 歌曲ID
+     * @return json
+     */
     @SneakyThrows
     @Override
     public String lyric(String id) {
@@ -119,6 +140,13 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    /**
+     * 新版网易云音乐真链获取
+     *
+     * @param id    音乐ID
+     * @param level 音质级别
+     * @return json
+     */
     @SneakyThrows
     @Override
     public String newSongUrl(String id, String level) {
@@ -130,6 +158,15 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    /**
+     * unknown
+     *
+     * @param id     音乐ID
+     * @param level  音质级别
+     * @param limit  分页
+     * @param offset 起始
+     * @return json
+     */
     @SneakyThrows
     @Override
     public String playListTrackAll(String id, String level, Integer limit, Integer offset) {
@@ -142,16 +179,26 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    /**
+     * VueBlog网易云音乐歌词获取
+     *
+     * @param id 音乐ID
+     * @return json
+     */
     @SneakyThrows
     @Override
     public String vueBlogLyric(String id) {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
 
         String cacheValue = valueOperations.get(requestConfig.getRedisLyricCachePrefix() + id);
-        if (cacheValue != null) return cacheValue;
+        if (cacheValue != null) {
+            return cacheValue;
+        }
 
         String lyricJson = lyric(id);
-        if (lyricJson == null) throw new RuntimeException("not found!");
+        if (lyricJson == null) {
+            throw new RuntimeException("not found!");
+        }
 
         JsonNode root = new ObjectMapper().readTree(lyricJson);
         JsonNode lrc = root.get("lrc");
@@ -160,13 +207,23 @@ public class MusicApiServiceImpl implements MusicApiService {
         return lyric;
     }
 
+    /**
+     * VueBlog网易云音乐真链获取
+     *
+     * @param id    音乐ID
+     * @param level 音质级别
+     * @return json
+     */
     @SneakyThrows
     @Override
     public String vueBlogSongUrl(String id, String level) {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
+        SetOperations<String, String> setOperations = redisTemplate.opsForSet();
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
-        if (cacheValue != null) return cacheValue;
+        if (cacheValue != null) {
+            return cacheValue;
+        }
 
         String url;
         String songJson = newSongUrl(id, level);
@@ -174,23 +231,41 @@ public class MusicApiServiceImpl implements MusicApiService {
         JsonNode temp = root.get("data")
                 .get(0);
         if (!temp.get("freeTrialInfo").isNull()) {
-            String kuWoSearchJson = kuWoSearch(
-                    new ObjectMapper()
-                            .readTree(songDetail(id))
-                            .get("songs")
-                            .get(0)
-                            .get("name")
-                            .asText(),
-                    1,
-                    1
-            );
-            JsonNode kuWoSearchJsonRoot = new ObjectMapper().readTree(kuWoSearchJson);
-            String kuWoMusicId = kuWoSearchJsonRoot.get("data")
-                    .get("list")
-                    .get(0)
-                    .get("musicrid")
-                    .asText();
-            url = kuWoSongUrl(kuWoMusicId.replace("MUSIC_", ""));
+            MusicDto musicDto = commonUtil.getMusicDtoInRedisNetEaseCloudCacheSetById(Long.parseLong(id));
+            if (musicDto != null) {
+                url = kuWoSongUrl(musicDto.getKuWoId());
+            } else {
+                String musicSongDetailJson = songDetail(id);
+                JsonNode musicSongDetailRoot = new ObjectMapper()
+                        .readTree(musicSongDetailJson);
+                JsonNode musicSongsOne = musicSongDetailRoot.get("songs")
+                        .get(0);
+
+                String kuWoSearchJson = kuWoSearch(
+                        musicSongsOne
+                                .get("name")
+                                .asText(),
+                        1,
+                        1
+                );
+                JsonNode kuWoSearchJsonRoot = new ObjectMapper().readTree(kuWoSearchJson);
+                String kuWoMusicId = kuWoSearchJsonRoot.get("data")
+                        .get("list")
+                        .get(0)
+                        .get("musicrid")
+                        .asText();
+                String kuWoMusicIdStr = kuWoMusicId.replace("MUSIC_", "");
+                url = kuWoSongUrl(kuWoMusicIdStr);
+
+                setOperations.add(
+                        requestConfig.getRedisNetEaseCloudCache(),
+                        commonUtil.toJsonStr(new MusicDto(
+                                musicSongsOne.get("id").asLong(),
+                                musicSongsOne.get("name").asText(),
+                                kuWoMusicIdStr
+                        ))
+                );
+            }
         } else {
             url = temp.get("url").asText();
         }
@@ -199,6 +274,12 @@ public class MusicApiServiceImpl implements MusicApiService {
         return url;
     }
 
+    /**
+     * 酷我音乐真链获取
+     *
+     * @param id 音乐ID
+     * @return json
+     */
     @Override
     public String kuWoSongUrl(String id) {
         HttpRequest request = HttpRequest.build()
@@ -209,7 +290,7 @@ public class MusicApiServiceImpl implements MusicApiService {
         HttpResponse response = Requests.requests.request(request);
         String body = response.getBody();
         if (body.contains("解析成功")) {
-            Pattern compile = Pattern.compile("\\bhttp://(.*?)\\.mp3\\b");
+            Pattern compile = Pattern.compile(KUWO_SEARCH_PATTERN);
             Matcher matcher = compile.matcher(body);
             if (matcher.find()) {
                 return matcher.group(0);
@@ -218,6 +299,14 @@ public class MusicApiServiceImpl implements MusicApiService {
         throw new RuntimeException("not found!");
     }
 
+    /**
+     * 酷我音乐搜索
+     *
+     * @param key 关键字
+     * @param pn  unknown
+     * @param fn  unknown
+     * @return json
+     */
     @SneakyThrows
     @Override
     public String kuWoSearch(String key, Integer pn, Integer fn) {
@@ -235,6 +324,12 @@ public class MusicApiServiceImpl implements MusicApiService {
         return body;
     }
 
+    /**
+     * 网易云音乐详情
+     *
+     * @param id 音乐ID
+     * @return json
+     */
     @Override
     public String songDetail(String id) {
         return commonServiceRequest(
@@ -244,6 +339,15 @@ public class MusicApiServiceImpl implements MusicApiService {
         );
     }
 
+    /**
+     * VueBlog格式网易云歌单列表
+     *
+     * @param id     歌单ID
+     * @param level  音质级别
+     * @param limit  分页
+     * @param offset 起始
+     * @return 列表
+     */
     @SneakyThrows
     @Override
     public ConcurrentLinkedQueue<Music> vueBlogMusicList(String id, String level, Integer limit, Integer offset) {
@@ -256,10 +360,14 @@ public class MusicApiServiceImpl implements MusicApiService {
         }
 
         JsonNode root = new ObjectMapper().readTree(playListTrackAll(id, level, limit, offset));
-        if (root.get("code").asInt() != 200) throw new RuntimeException("获取歌单列表失败!");
+        if (root.get("code").asInt() != 200) {
+            throw new RuntimeException("获取歌单列表失败!");
+        }
 
         JsonNode songs = root.get("songs");
-        if (songs.size() == 0) return new ConcurrentLinkedQueue<>();
+        if (songs.size() == 0) {
+            return new ConcurrentLinkedQueue<>();
+        }
 
         var musicList = new ConcurrentLinkedQueue<Music>();
 
@@ -290,52 +398,9 @@ public class MusicApiServiceImpl implements MusicApiService {
         valueOperations.set(
                 requestConfig.getRedisMusicInfoCachePrefix() + id,
                 new ObjectMapper().writeValueAsString(musicList),
-                parseRedisTtlType()
+                commonUtil.parseRedisTtlType()
         );
         return musicList;
-    }
-
-    private Duration parseRedisTtlType() {
-        RedisTtlType redisTtlType = requestConfig.getRedisTtlType();
-        Duration ttl;
-
-        switch (redisTtlType) {
-            case NANOS: {
-                ttl = Duration.ofNanos(requestConfig.getRedisTtl());
-                break;
-            }
-
-            case MILLLIS: {
-                ttl = Duration.ofMillis(requestConfig.getRedisTtl());
-                break;
-            }
-
-            case MINUTES: {
-                ttl = Duration.ofMinutes(requestConfig.getRedisTtl());
-                break;
-            }
-
-            case SECONDS: {
-                ttl = Duration.ofSeconds(requestConfig.getRedisTtl());
-                break;
-            }
-
-            case HOURS: {
-                ttl = Duration.ofHours(requestConfig.getRedisTtl());
-                break;
-            }
-
-            case DAYS: {
-                ttl = Duration.ofDays(requestConfig.getRedisTtl());
-                break;
-            }
-
-            default: {
-                throw new RuntimeException("unknown redis ttl type");
-            }
-        }
-
-        return ttl;
     }
 
     @SneakyThrows
@@ -347,6 +412,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                         )
                         .setMethod(Requests.REQUEST_METHOD.POST)
         ).getBody();
+        log.info("body {}", body);
         JsonNode root = new ObjectMapper().readTree(body);
         if (root.get("code").asInt() == 20001) {
             emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());

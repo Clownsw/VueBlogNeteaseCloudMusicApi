@@ -50,4 +50,7 @@ public class RequestConfig {
 
     @Value("${api.server.redisMusicUrlCachePrefix}")
     private String redisMusicUrlCachePrefix;
+
+    @Value("${api.server.redisNetEaseCloudCache}")
+    private String redisNetEaseCloudCache;
 }
