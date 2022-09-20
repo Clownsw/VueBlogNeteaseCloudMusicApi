@@ -7,6 +7,7 @@ import cn.smilex.req.Requests;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
 import cn.smilex.vueblog.model.MusicDto;
+import cn.smilex.vueblog.model.Tuple;
 import cn.smilex.vueblog.service.MusicApiService;
 import cn.smilex.vueblog.util.CommonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -15,11 +16,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -70,6 +75,7 @@ public class MusicApiServiceImpl implements MusicApiService {
         this.requestConfig = requestConfig;
     }
 
+    @Lazy
     @Autowired
     public void setCommonUtil(CommonUtil commonUtil) {
         this.commonUtil = commonUtil;
@@ -216,21 +222,23 @@ public class MusicApiServiceImpl implements MusicApiService {
      */
     @SneakyThrows
     @Override
-    public String vueBlogSongUrl(String id, String level) {
+    public String vueBlogSongUrl(String id, String level, boolean isPlay) {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
         SetOperations<String, String> setOperations = redisTemplate.opsForSet();
 
+        Tuple<Boolean, String> result = commonUtil.isNotFree(id, level);
+
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
         if (cacheValue != null) {
+            if (!result.getLeft() && isPlay) {
+                return null;
+            }
+
             return cacheValue;
         }
 
         String url;
-        String songJson = newSongUrl(id, level);
-        JsonNode root = new ObjectMapper().readTree(songJson);
-        JsonNode temp = root.get("data")
-                .get(0);
-        if (!temp.get("freeTrialInfo").isNull()) {
+        if (!result.getLeft()) {
             MusicDto musicDto = commonUtil.getMusicDtoInRedisNetEaseCloudCacheSetById(Long.parseLong(id));
             if (musicDto != null) {
                 url = kuWoSongUrl(musicDto.getKuWoId());
@@ -266,8 +274,11 @@ public class MusicApiServiceImpl implements MusicApiService {
                         ))
                 );
             }
+            if (isPlay) {
+                return null;
+            }
         } else {
-            url = temp.get("url").asText();
+            url = result.getRight();
         }
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
@@ -337,6 +348,25 @@ public class MusicApiServiceImpl implements MusicApiService {
                         "song/detail" +
                         "?ids=" + id
         );
+    }
+
+    @Override
+    public void vueBlogPlaySong(String id, String level, HttpServletResponse response) {
+        HttpResponse httpResponse = Requests.requests.request(
+                HttpRequest.build()
+                        .setUrl(vueBlogSongUrl(id, level, false))
+                        .setMethod(Requests.REQUEST_METHOD.GET)
+                        .setEnableDataByte(true)
+        );
+
+        response.addHeader(HttpHeaders.CONTENT_TYPE, "audio/mpeg");
+
+        try (ServletOutputStream servletOutputStream = response.getOutputStream()) {
+            servletOutputStream.write(httpResponse.getDataByte());
+            servletOutputStream.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**

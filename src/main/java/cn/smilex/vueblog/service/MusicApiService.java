@@ -2,6 +2,7 @@ package cn.smilex.vueblog.service;
 
 import cn.smilex.vueblog.model.Music;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -88,7 +89,7 @@ public interface MusicApiService {
      * @param level 音质级别
      * @return json
      */
-    String vueBlogSongUrl(String id, String level);
+    String vueBlogSongUrl(String id, String level, boolean isPlay);
 
     /**
      * 酷我音乐真链获取
@@ -115,4 +116,6 @@ public interface MusicApiService {
      * @return json
      */
     String songDetail(String id);
+
+    void vueBlogPlaySong(String id, String level, HttpServletResponse response);
 }

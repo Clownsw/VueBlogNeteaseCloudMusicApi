@@ -3,12 +3,15 @@ package cn.smilex.vueblog.controller;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.service.MusicApiService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author smilex
@@ -92,17 +95,31 @@ public class MusicApiController {
         return musicApiService.vueBlogLyric(id);
     }
 
+    @SneakyThrows
     @GetMapping("/vueblog/song/url")
     public ModelAndView vueBlogSongUrl(
             @RequestParam(value = "id") String id,
             @RequestParam(value = "level", required = false) String level
     ) {
-        return new ModelAndView(
-                "redirect:" + musicApiService.vueBlogSongUrl(
-                        id,
-                        level == null ? requestConfig.getDefaultMusicLevel() : level
-                )
+        final String finalLevel = level == null ? requestConfig.getDefaultMusicLevel() : level;
+        String result = musicApiService.vueBlogSongUrl(
+                id,
+                finalLevel,
+                true
         );
+
+        return new ModelAndView(
+                "redirect:" + (result == null ? requestConfig.getServerUrl() + "api/vueblog/play/song?id=" + id + "&level=" + finalLevel : result)
+        );
+    }
+
+    @GetMapping("/vueblog/play/song")
+    public void vueBlogPlaySong(
+            @RequestParam(value = "id") String id,
+            @RequestParam(value = "level", required = false) String level,
+            HttpServletResponse response
+    ) {
+        musicApiService.vueBlogPlaySong(id, level, response);
     }
 
     @GetMapping("/kuwo/search")
