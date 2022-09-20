@@ -1,5 +1,7 @@
 server:
   port: 2222
+  tomcat:
+    connection-timeout: 60000
 spring:
   application:
     name: VueBlogNeteaseCloudMusicApi

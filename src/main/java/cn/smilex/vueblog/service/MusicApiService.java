@@ -117,5 +117,12 @@ public interface MusicApiService {
      */
     String songDetail(String id);
 
+    /**
+     * VueBlog播放音乐(因https无法加载http资源, 内置请求响应音频)
+     *
+     * @param id       音乐ID
+     * @param level    音质级别
+     * @param response 响应对象
+     */
     void vueBlogPlaySong(String id, String level, HttpServletResponse response);
 }
