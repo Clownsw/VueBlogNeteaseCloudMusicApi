@@ -2,11 +2,12 @@ server:
   port: 2222
   tomcat:
     connection-timeout: 60000
+
 spring:
   application:
     name: VueBlogNeteaseCloudMusicApi
   redis:
-    url: 127.0.0.1
+    host: 127.0.0.1
     port: 6379
     database: 0
     password: ''

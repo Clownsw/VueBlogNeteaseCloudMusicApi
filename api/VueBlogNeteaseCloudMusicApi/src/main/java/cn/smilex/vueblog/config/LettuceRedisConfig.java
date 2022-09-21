@@ -24,8 +24,8 @@ import java.time.Duration;
 @Configuration
 public class LettuceRedisConfig {
 
-    @Value("${spring.redis.url}")
-    private String url;
+    @Value("${spring.redis.host}")
+    private String host;
 
     @Value("${spring.redis.port}")
     private Integer port;
@@ -59,7 +59,7 @@ public class LettuceRedisConfig {
         objectGenericObjectPoolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(100));
 
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
-        configuration.setHostName(url);
+        configuration.setHostName(host);
         configuration.setPort(port);
         configuration.setDatabase(database);
         configuration.setPassword(RedisPassword.of(password));
