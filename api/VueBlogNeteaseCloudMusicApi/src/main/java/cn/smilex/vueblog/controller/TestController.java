@@ -44,4 +44,25 @@ public class TestController {
 
         return "test";
     }
+
+    @SneakyThrows
+    @GetMapping("/test2")
+    public String sendUrlTest() {
+        var channel = nettyClient.getChannel();
+
+        var message = new Message();
+        message.setActionType(1);
+
+        var content = new HashMap<String, Object>(1);
+        content.put("url", "https://www.smilex.cn/");
+        message.setContent(content);
+        var buffer = new ObjectMapper().writeValueAsString(message).getBytes(StandardCharsets.UTF_8);
+        ByteBuf buf = channel.alloc().buffer(4 + buffer.length);
+        buf.writeInt(buffer.length);
+        buf.writeBytes(buffer);
+        channel.writeAndFlush(buf);
+
+
+        return "test2";
+    }
 }

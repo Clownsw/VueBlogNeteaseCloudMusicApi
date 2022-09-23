@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Component;
@@ -50,14 +49,34 @@ public class CommonUtil {
         Duration ttl;
 
         switch (redisTtlType) {
-            case NANOS -> ttl = Duration.ofNanos(requestConfig.getRedisTtl());
-            case MILLLIS -> ttl = Duration.ofMillis(requestConfig.getRedisTtl());
-            case MINUTES -> ttl = Duration.ofMinutes(requestConfig.getRedisTtl());
-            case SECONDS -> ttl = Duration.ofSeconds(requestConfig.getRedisTtl());
-            case HOURS -> ttl = Duration.ofHours(requestConfig.getRedisTtl());
-            case DAYS -> ttl = Duration.ofDays(requestConfig.getRedisTtl());
+            case NANOS: {
+                ttl = Duration.ofNanos(requestConfig.getRedisTtl());
+                break;
+            }
+            case MILLLIS: {
+                ttl = Duration.ofMillis(requestConfig.getRedisTtl());
+                break;
+            }
+            case MINUTES: {
+                ttl = Duration.ofMinutes(requestConfig.getRedisTtl());
+                break;
+            }
+            case SECONDS: {
+                ttl = Duration.ofSeconds(requestConfig.getRedisTtl());
+                break;
+            }
+            case HOURS: {
+                ttl = Duration.ofHours(requestConfig.getRedisTtl());
+                break;
+            }
+            case DAYS: {
+                ttl = Duration.ofDays(requestConfig.getRedisTtl());
+                break;
+            }
 
-            default -> throw new RuntimeException("unknown redis ttl type");
+            default: {
+                throw new RuntimeException("unknown redis ttl type");
+            }
         }
 
         return ttl;
