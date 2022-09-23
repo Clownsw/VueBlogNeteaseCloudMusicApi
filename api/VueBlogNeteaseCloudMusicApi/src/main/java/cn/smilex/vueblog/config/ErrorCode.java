@@ -3,7 +3,7 @@ package cn.smilex.vueblog.config;
 import lombok.Getter;
 
 /**
- * @author YangLuJia
+ * @author smilex
  * @date 2022/9/23 16:19
  */
 @Getter

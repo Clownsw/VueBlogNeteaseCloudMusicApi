@@ -1,6 +1,9 @@
 package cn.smilex.vueblog.netty;
 
 import cn.smilex.vueblog.config.ErrorCode;
+import cn.smilex.vueblog.netty.handler.MessageCodec;
+import cn.smilex.vueblog.netty.handler.NettyChannelHandler;
+import cn.smilex.vueblog.netty.handler.ProtocolFrameHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -36,6 +39,7 @@ public class NettyClient {
         final NioEventLoopGroup workerGroup = new NioEventLoopGroup(2);
 
         final LoggingHandler loggingHandler = new LoggingHandler();
+        final MessageCodec messageCodec = new MessageCodec();
 
         ChannelFuture channelFuture = new Bootstrap()
                 .group(workerGroup)
@@ -44,7 +48,10 @@ public class NettyClient {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         ch.pipeline()
-                                .addLast(loggingHandler);
+                                .addLast(loggingHandler)
+                                .addLast(new ProtocolFrameHandler())
+                                .addLast(messageCodec)
+                                .addLast(new NettyChannelHandler());
                     }
                 })
                 .connect("127.0.0.1", 1233);

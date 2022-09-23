@@ -17,7 +17,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
         if (msg != null) {
             if (msg instanceof Message) {
                 var message = (Message) msg;
-                Distribution.run(message);
+                Distribution.run(ctx, message);
             }
         }
     }

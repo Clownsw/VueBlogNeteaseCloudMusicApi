@@ -1,4 +1,4 @@
-package cn.smilex.vueblog.protocol;
+package cn.smilex.vueblog.netty.handler;
 
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 

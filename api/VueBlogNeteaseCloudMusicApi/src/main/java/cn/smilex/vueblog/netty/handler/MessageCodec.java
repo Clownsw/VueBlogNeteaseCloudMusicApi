@@ -1,5 +1,6 @@
-package cn.smilex.vueblog.protocol;
+package cn.smilex.vueblog.netty.handler;
 
+import cn.smilex.vueblog.netty.protocol.Message;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
@@ -19,6 +20,7 @@ import java.util.List;
 @Slf4j
 @ChannelHandler.Sharable
 public class MessageCodec extends MessageToMessageCodec<ByteBuf, Message> {
+
     @Override
     protected void encode(ChannelHandlerContext ctx, Message msg, List<Object> out) throws Exception {
         byte[] jsonBytes = new ObjectMapper()
