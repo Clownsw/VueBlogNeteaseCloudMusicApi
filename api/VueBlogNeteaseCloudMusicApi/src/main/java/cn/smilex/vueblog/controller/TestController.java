@@ -34,6 +34,7 @@ public class TestController {
         Message message = new Message();
         var content = new HashMap<String, Object>();
         content.put("name", "test");
+        message.setActionType(1);
         message.setContent(content);
         var buffer = new ObjectMapper().writeValueAsString(message).getBytes(StandardCharsets.UTF_8);
         ByteBuf buf = channel.alloc().buffer(4 + buffer.length);

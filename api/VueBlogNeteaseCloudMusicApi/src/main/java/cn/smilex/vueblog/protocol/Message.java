@@ -14,5 +14,6 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Message {
+    private Integer actionType;
     private Map<String, Object> content;
 }
