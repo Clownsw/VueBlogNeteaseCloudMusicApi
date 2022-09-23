@@ -1,5 +1,6 @@
 package cn.smilex.vueblog.handler;
 
+import cn.smilex.vueblog.protocol.Message;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("有消息连接");
-    }
-
-    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (msg != null) {
+            if (msg instanceof Message message) {
+                log.info(message.toString());
+            }
+        }
     }
 }
