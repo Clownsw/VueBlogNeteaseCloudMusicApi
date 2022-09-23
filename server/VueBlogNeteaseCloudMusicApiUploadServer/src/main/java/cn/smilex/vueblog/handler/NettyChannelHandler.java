@@ -17,11 +17,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
         if (msg != null) {
             if (msg instanceof Message) {
                 var message = (Message) msg;
-                if (message.getActionType() == 1) {
-                    String url = (String) message.getContent()
-                            .get("url");
-                    System.out.println(url);
-                }
+                Distribution.run(message);
             }
         }
     }
