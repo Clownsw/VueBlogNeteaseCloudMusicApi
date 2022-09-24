@@ -28,6 +28,7 @@ public class Distribution {
             case REQUEST_DOWNLOAD_AND_UPLOAD: {
                 var content = message.getContent();
                 final String url = (String) content.get("url");
+                final String filePath = (String) content.get("filePath");
                 Thread.ofVirtual()
                         .start(() -> {
                             HttpResponse httpResponse = Requests.requests
@@ -42,7 +43,7 @@ public class Distribution {
                             params.put(RestManager.PARAMS.CONTENT_MD5.getValue(), UpYunUtils.md5(httpResponse.getDataByte()));
                             try {
                                 Response response = Application.REST_MANAGER
-                                        .writeFile("/1.mp3", httpResponse.getDataByte(), params);
+                                        .writeFile(filePath, httpResponse.getDataByte(), params);
 
                                 var responseMessageContent = new HashMap<String, Object>(1);
                                 assert response.body() != null;

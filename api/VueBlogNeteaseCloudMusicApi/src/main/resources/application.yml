@@ -18,6 +18,11 @@ spring:
         max-idle: 8
         min-idle: 2
     client-type: lettuce
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3333/vueblog_music
+    username: root
+    password: 123123
 
 api:
   server:

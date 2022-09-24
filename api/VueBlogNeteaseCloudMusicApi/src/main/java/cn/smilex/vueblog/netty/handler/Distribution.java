@@ -15,6 +15,7 @@ public class Distribution {
     public static void run(Message message) {
         switch (message.getActionType()) {
             case RESPONSE_UPLOAD_RESULT: {
+                log.info("{}", message);
                 break;
             }
 

@@ -51,7 +51,7 @@ public class Application {
                 COMMON_CONFIG.getUserName(),
                 COMMON_CONFIG.getPassword()
         );
-        
+
         try {
             Response bucketUsage = REST_MANAGER.getBucketUsage();
             assert bucketUsage.body() != null;
