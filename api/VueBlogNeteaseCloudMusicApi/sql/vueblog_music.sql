@@ -11,7 +11,7 @@
  Target Server Version : 80028
  File Encoding         : 65001
 
- Date: 24/09/2022 15:16:57
+ Date: 24/09/2022 15:56:15
 */
 
 SET NAMES utf8mb4;
@@ -27,6 +27,7 @@ CREATE TABLE `music`  (
   `music_id` bigint NOT NULL,
   `music_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `music_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `not_free` tinyint NULL DEFAULT NULL,
   `create_date_time` datetime NOT NULL,
   `modify_date_time` datetime NOT NULL,
   PRIMARY KEY (`id`) USING BTREE

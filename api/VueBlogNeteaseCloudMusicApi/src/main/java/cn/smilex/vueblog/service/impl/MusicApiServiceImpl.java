@@ -1,14 +1,13 @@
 package cn.smilex.vueblog.service.impl;
 
-import cn.smilex.req.Cookie;
-import cn.smilex.req.HttpRequest;
-import cn.smilex.req.HttpResponse;
-import cn.smilex.req.Requests;
+import cn.smilex.req.*;
+import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
 import cn.smilex.vueblog.model.MusicDto;
 import cn.smilex.vueblog.model.Tuple;
 import cn.smilex.vueblog.service.MusicApiService;
+import cn.smilex.vueblog.service.MusicService;
 import cn.smilex.vueblog.util.CommonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,6 +45,7 @@ public class MusicApiServiceImpl implements MusicApiService {
     private RedisTemplate<String, String> redisTemplate;
     private RequestConfig requestConfig;
     private CommonUtil commonUtil;
+    private MusicService musicService;
 
     private static final HashMap<String, String> DEFAULT_REQUEST_HEADER = new HashMap<>();
     private static final HashMap<String, String> KUWO_REQUEST_HEADER = new HashMap<>();
@@ -81,6 +81,11 @@ public class MusicApiServiceImpl implements MusicApiService {
         this.commonUtil = commonUtil;
     }
 
+    @Autowired
+    public void setMusicService(MusicService musicService) {
+        this.musicService = musicService;
+    }
+
     /**
      * 网易云音乐搜索
      *
@@ -93,7 +98,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                 requestConfig.getUrl() +
                         "search" +
                         "?keywords=" + keyWords
-        );
+        ).getBody();
     }
 
     @SneakyThrows
@@ -226,11 +231,9 @@ public class MusicApiServiceImpl implements MusicApiService {
         ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
         SetOperations<String, String> setOperations = redisTemplate.opsForSet();
 
-        Tuple<Boolean, String> result = commonUtil.isNotFree(id, level);
-
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
         if (cacheValue != null) {
-            if (!result.getLeft() && isPlay) {
+            if (!commonUtil.musicIsNotFree(MusicType.WYY, id, level) && isPlay) {
                 return null;
             }
 
@@ -238,6 +241,8 @@ public class MusicApiServiceImpl implements MusicApiService {
         }
 
         String url;
+
+        Tuple<Boolean, String> result = commonUtil.getMusicIsNoteFreeAndUrl(id, level);
         if (!result.getLeft()) {
             MusicDto musicDto = commonUtil.getMusicDtoInRedisNetEaseCloudCacheSetById(Long.parseLong(id));
             if (musicDto != null) {
@@ -274,11 +279,13 @@ public class MusicApiServiceImpl implements MusicApiService {
                         ))
                 );
             }
+            commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
             if (isPlay) {
                 return null;
             }
         } else {
             url = result.getRight();
+            commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
         }
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
@@ -297,7 +304,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                 .setUrl("https://peng3.com/vip/kuwo/")
                 .setHeaders(DEFAULT_REQUEST_HEADER)
                 .setMethod(Requests.REQUEST_METHOD.POST)
-                .setBody("id=" + id + "&class=mp3");
+                .setBody(HttpBodyBuilder.ofString("id=" + id + "&class=mp3"));
         HttpResponse response = Requests.requests.request(request);
         String body = response.getBody();
         if (body.contains("解析成功")) {

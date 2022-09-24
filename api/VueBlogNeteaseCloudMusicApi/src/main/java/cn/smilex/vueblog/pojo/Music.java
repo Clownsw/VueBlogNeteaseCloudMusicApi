@@ -34,6 +34,9 @@ public class Music {
     @TableField("music_url")
     private String musicUrl;
 
+    @TableField("not_free")
+    private Boolean notFree;
+
     @TableField(value = "create_date_time", fill = FieldFill.INSERT)
     private LocalDateTime createDateTime;
 
@@ -44,5 +47,13 @@ public class Music {
         this.musicType = musicType;
         this.musicId = musicId;
         this.musicUrl = musicUrl;
+    }
+
+    public Music(Short musicType, Long musicId, String musicName, String musicUrl, Boolean notFree) {
+        this.musicType = musicType;
+        this.musicId = musicId;
+        this.musicName = musicName;
+        this.musicUrl = musicUrl;
+        this.notFree = notFree;
     }
 }

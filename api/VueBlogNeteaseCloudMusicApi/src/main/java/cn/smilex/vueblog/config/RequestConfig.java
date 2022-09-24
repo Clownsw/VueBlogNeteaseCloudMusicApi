@@ -53,4 +53,7 @@ public class RequestConfig {
 
     @Value("${api.server.redisNetEaseCloudCache}")
     private String redisNetEaseCloudCache;
+
+    @Value("${api.server.redisNetEaseCloudStatusCache}")
+    private String redisNetEaseCloudStatusCache;
 }
