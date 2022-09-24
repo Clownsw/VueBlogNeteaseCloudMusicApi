@@ -1,14 +1,17 @@
 package cn.smilex.vueblog.service.impl;
 
 import cn.smilex.req.*;
+import cn.smilex.vueblog.config.MessageCode;
 import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
 import cn.smilex.vueblog.model.MusicDto;
 import cn.smilex.vueblog.model.Tuple;
+import cn.smilex.vueblog.netty.NettyClient;
 import cn.smilex.vueblog.service.MusicApiService;
 import cn.smilex.vueblog.service.MusicService;
 import cn.smilex.vueblog.util.CommonUtil;
+import cn.smilex.vueblog.util.MessageUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +49,7 @@ public class MusicApiServiceImpl implements MusicApiService {
     private RequestConfig requestConfig;
     private CommonUtil commonUtil;
     private MusicService musicService;
+    private NettyClient nettyClient;
 
     private static final HashMap<String, String> DEFAULT_REQUEST_HEADER = new HashMap<>();
     private static final HashMap<String, String> KUWO_REQUEST_HEADER = new HashMap<>();
@@ -84,6 +88,11 @@ public class MusicApiServiceImpl implements MusicApiService {
     @Autowired
     public void setMusicService(MusicService musicService) {
         this.musicService = musicService;
+    }
+
+    @Autowired
+    public void setNettyClient(NettyClient nettyClient) {
+        this.nettyClient = nettyClient;
     }
 
     /**
@@ -279,12 +288,42 @@ public class MusicApiServiceImpl implements MusicApiService {
                         ))
                 );
             }
+            commonUtil.createVirtualThread(() -> {
+                try {
+                    var content = new HashMap<String, Object>(2);
+                    content.put("url", url);
+                    content.put("musicId", id);
+                    content.put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url));
+                    MessageUtil.buildAndMessageMessage(
+                            nettyClient.getChannel(),
+                            MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
+                            content
+                    );
+                } catch (Exception e) {
+                    log.error("", e);
+                }
+            });
             commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
             if (isPlay) {
                 return null;
             }
         } else {
             url = result.getRight();
+            commonUtil.createVirtualThread(() -> {
+                try {
+                    var content = new HashMap<String, Object>(2);
+                    content.put("url", url);
+                    content.put("musicId", id);
+                    content.put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url));
+                    MessageUtil.buildAndMessageMessage(
+                            nettyClient.getChannel(),
+                            MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
+                            content
+                    );
+                } catch (Exception e) {
+                    log.error("", e);
+                }
+            });
             commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
         }
 

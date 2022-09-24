@@ -1,5 +1,6 @@
 package cn.smilex.vueblog;
 
+import cn.smilex.vueblog.util.CommonUtil;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -12,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class VueBlogNeteaseCloudMusicApiApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(VueBlogNeteaseCloudMusicApiApplication.class, args);
+        CommonUtil.APPLICATION_CONTEXT = SpringApplication.run(VueBlogNeteaseCloudMusicApiApplication.class, args);
     }
 
 }

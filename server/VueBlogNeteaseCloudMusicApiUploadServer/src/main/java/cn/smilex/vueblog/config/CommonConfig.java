@@ -16,4 +16,5 @@ public class CommonConfig {
     private String bucketName;
     private String userName;
     private String password;
+    private String url;
 }

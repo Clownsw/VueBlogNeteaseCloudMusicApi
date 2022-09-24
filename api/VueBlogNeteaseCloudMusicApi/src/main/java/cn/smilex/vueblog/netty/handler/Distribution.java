@@ -1,9 +1,14 @@
 package cn.smilex.vueblog.netty.handler;
 
+import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.netty.protocol.Message;
+import cn.smilex.vueblog.util.CommonUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 
-import static cn.smilex.vueblog.config.ResponseCode.*;
+import java.util.Map;
+
+import static cn.smilex.vueblog.config.MessageCode.*;
 
 /**
  * @author smilex
@@ -12,10 +17,26 @@ import static cn.smilex.vueblog.config.ResponseCode.*;
  */
 @Slf4j
 public class Distribution {
+    @SuppressWarnings("unchecked")
     public static void run(Message message) {
+        log.info("{}", message);
         switch (message.getActionType()) {
             case RESPONSE_UPLOAD_RESULT: {
-                log.info("{}", message);
+                Thread.ofVirtual()
+                        .start(() -> {
+                            Map<String, Object> content = message.getContent();
+                            var url = (String) content.get("url");
+                            var musicId = (String) content.get("musicId");
+
+                            var requestConfig = CommonUtil.APPLICATION_CONTEXT
+                                    .getBean(RequestConfig.class);
+                            var redisTemplate = (RedisTemplate<String, String>) CommonUtil.APPLICATION_CONTEXT
+                                    .getBean("stringRedisTemplate");
+                            var valueOperations = redisTemplate.opsForValue();
+
+                            valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + musicId, url);
+                            valueOperations.set(requestConfig.getRedisNetEaseCloudStatusCache() + musicId, "true");
+                        });
                 break;
             }
 

@@ -10,7 +10,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceClientConfigurat
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -74,7 +73,7 @@ public class LettuceRedisConfig {
     public RedisTemplate<String, String> redisTemplate(LettuceConnectionFactory connectionFactory) {
         var redisTemplate = new RedisTemplate<String, String>();
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        redisTemplate.setValueSerializer(new StringRedisSerializer());
         redisTemplate.setDefaultSerializer(RedisSerializer.json());
         redisTemplate.setConnectionFactory(connectionFactory);
         return redisTemplate;

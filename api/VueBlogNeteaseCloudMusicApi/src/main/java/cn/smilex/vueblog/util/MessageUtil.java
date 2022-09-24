@@ -1,10 +1,11 @@
 package cn.smilex.vueblog.util;
 
 import cn.smilex.vueblog.netty.protocol.Message;
+import io.netty.channel.Channel;
 
 import java.util.Map;
 
-import static cn.smilex.vueblog.config.ResponseCode.DEFAULT_REQUEST_OR_RESPONSE;
+import static cn.smilex.vueblog.config.MessageCode.DEFAULT_REQUEST_OR_RESPONSE;
 
 /**
  * @author smilex
@@ -18,5 +19,9 @@ public final class MessageUtil {
 
     public static Message buildMessage(Integer actionType, Map<String, Object> content) {
         return new Message(actionType, content);
+    }
+
+    public static void buildAndMessageMessage(Channel channel, Integer actionType, Map<String, Object> content) {
+        channel.writeAndFlush(buildMessage(actionType, content));
     }
 }

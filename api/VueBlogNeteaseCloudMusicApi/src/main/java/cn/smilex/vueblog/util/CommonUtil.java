@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.ValueOperations;
@@ -27,6 +28,7 @@ import java.util.Set;
  */
 @Component
 public class CommonUtil {
+    public static ConfigurableApplicationContext APPLICATION_CONTEXT = null;
     public static final String EMPTY_STRING = "";
 
     private RedisTemplate<String, String> redisTemplate;
@@ -156,5 +158,13 @@ public class CommonUtil {
     public Thread createVirtualThread(Runnable runnable) {
         return Thread.ofVirtual()
                 .start(runnable);
+    }
+
+    public String parseUrlGetFileName(String url) {
+        var index = url.lastIndexOf("/") + 1;
+        if (index != url.length()) {
+            return url.substring(index);
+        }
+        throw new RuntimeException("error url!");
     }
 }
