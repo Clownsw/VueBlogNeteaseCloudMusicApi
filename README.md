@@ -1,5 +1,11 @@
 # VueBlogNeteaseCloudMusicApi
-[VueBlog](https://github.com/Clownsw/VueBlog) 系统网易云播放器歌单API
+[VueBlog](https://github.com/Clownsw/VueBlog) VueBlog系统音乐播放API和缓存系统
+
+## 状态
+开发中...
+
+## 简介
+待补充...
 
 ## 引用项目
 - [VueBlog](https://github.com/Clownsw/VueBlog)
