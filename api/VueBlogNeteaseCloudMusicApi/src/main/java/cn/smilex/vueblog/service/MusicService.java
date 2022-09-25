@@ -18,7 +18,22 @@ public interface MusicService extends IService<Music> {
      */
     Boolean getMusicNotFreeFiledByMusicId(Long musicId);
 
+    /**
+     * 通过音乐ID获取数量
+     *
+     * @param musicId 音乐ID
+     * @return 数量
+     */
     long getMusicCountByMusicId(Long musicId);
+
+
+    /**
+     * 通过音乐ID获取URL
+     *
+     * @param musicId 音乐ID
+     * @return URL
+     */
+    String getMusicUrlByMusicId(Long musicId);
 
     /**
      * 将指定音乐是否免费缓存到Redis中

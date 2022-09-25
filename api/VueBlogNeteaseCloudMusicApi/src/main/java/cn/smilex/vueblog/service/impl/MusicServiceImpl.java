@@ -55,12 +55,33 @@ public class MusicServiceImpl extends ServiceImpl<MusicDao, Music> implements Mu
         return music.getNotFree();
     }
 
+    /**
+     * 通过音乐ID获取数量
+     *
+     * @param musicId 音乐ID
+     * @return 数量
+     */
     @Override
     public long getMusicCountByMusicId(Long musicId) {
         return count(
                 new QueryWrapper<Music>()
                         .eq("music_id", musicId)
         );
+    }
+
+    /**
+     * 通过音乐ID获取URL
+     *
+     * @param musicId 音乐ID
+     * @return URL
+     */
+    @Override
+    public String getMusicUrlByMusicId(Long musicId) {
+        Music music = getOne(
+                new QueryWrapper<Music>()
+                        .eq("music_id", musicId)
+        );
+        return music == null ? null : music.getMusicUrl();
     }
 
     /**
