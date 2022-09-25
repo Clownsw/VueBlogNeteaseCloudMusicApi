@@ -504,7 +504,6 @@ public class MusicApiServiceImpl implements MusicApiService {
                         )
                         .setMethod(Requests.REQUEST_METHOD.POST)
         ).getBody();
-        log.info("body {}", body);
         JsonNode root = new ObjectMapper().readTree(body);
         if (root.get("code").asInt() == 20001) {
             emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());

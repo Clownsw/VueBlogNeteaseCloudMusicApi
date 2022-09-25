@@ -5,6 +5,7 @@ import cn.smilex.vueblog.netty.protocol.Message;
 import cn.smilex.vueblog.pojo.Music;
 import cn.smilex.vueblog.service.MusicService;
 import cn.smilex.vueblog.util.CommonUtil;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -44,7 +45,14 @@ public class Distribution {
                             var music = new Music();
                             music.setId(Long.parseLong(musicId));
                             music.setMusicUrl(url);
-                            musicService.updateById(music);
+                            boolean result = musicService.update(
+                                    new UpdateWrapper<Music>()
+                                            .eq("music_id", Long.parseLong(musicId))
+                                            .set("music_url", url)
+                            );
+                            if (!result) {
+                                log.info("update music url error!");
+                            }
                         });
                 break;
             }
