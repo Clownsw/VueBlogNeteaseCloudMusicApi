@@ -16,7 +16,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Response;
 
 import java.io.InputStream;
 
@@ -51,14 +50,7 @@ public class Application {
                 COMMON_CONFIG.getUserName(),
                 COMMON_CONFIG.getPassword()
         );
-
-        try {
-            Response bucketUsage = REST_MANAGER.getBucketUsage();
-            assert bucketUsage.body() != null;
-            System.out.println(bucketUsage.body().string());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        REST_MANAGER.setTimeout(COMMON_CONFIG.getUploadTimeOut());
     }
 
     public static void initServer() {

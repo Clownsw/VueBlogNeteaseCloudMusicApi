@@ -1,5 +1,7 @@
 {
   "bucketName": "",
   "userName": "",
-  "password": ""
+  "password": "",
+  "url": "",
+  "uploadTimeOut": 30000
 }

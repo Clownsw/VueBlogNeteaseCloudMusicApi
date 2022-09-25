@@ -17,4 +17,5 @@ public class CommonConfig {
     private String userName;
     private String password;
     private String url;
+    private Integer uploadTimeOut;
 }
