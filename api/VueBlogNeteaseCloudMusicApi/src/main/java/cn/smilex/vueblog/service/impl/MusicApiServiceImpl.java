@@ -242,11 +242,18 @@ public class MusicApiServiceImpl implements MusicApiService {
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
         if (cacheValue != null) {
-            if (!commonUtil.musicIsNotFree(MusicType.WYY, id, level) && isPlay) {
-                return null;
-            }
+            if (cacheValue.isBlank()) {
+                Thread.ofVirtual()
+                        .start(() -> {
+                            redisTemplate.delete(requestConfig.getRedisMusicUrlCachePrefix() + id);
+                        });
+            } else {
+                if (!commonUtil.musicIsNotFree(MusicType.WYY, id, level) && isPlay) {
+                    return null;
+                }
 
-            return cacheValue;
+                return cacheValue;
+            }
         }
 
         String url;

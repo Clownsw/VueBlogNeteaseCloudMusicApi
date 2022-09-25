@@ -49,7 +49,6 @@ public class AppStartEvent implements ApplicationListener<ApplicationContextEven
 
             int i = 0;
 
-
             for (Music music : musicList) {
                 Thread.ofVirtual()
                         .name("initMusicInfo-" + i + 1)
