@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.Arrays;
-
 /**
  * @author smilex
  * @date 2022/9/11/18:53
@@ -32,7 +30,7 @@ public class GlobalExceptionHandler {
     @ResponseBody
     @ExceptionHandler(Exception.class)
     public String error(Exception e) {
-        log.error(Arrays.toString(e.getStackTrace()));
+        log.error("", e);
         return commonUtil.toJsonStr(Result.error("unknown error"));
     }
 
@@ -40,7 +38,7 @@ public class GlobalExceptionHandler {
     @ResponseBody
     @ExceptionHandler(JsonProcessingException.class)
     public String error(JsonProcessingException e) {
-        log.error(Arrays.toString(e.getStackTrace()));
+        log.error("", e);
         return commonUtil.toJsonStr(Result.error("system inner error"));
     }
 }
