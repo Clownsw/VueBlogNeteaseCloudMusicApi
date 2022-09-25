@@ -241,7 +241,7 @@ public class MusicApiServiceImpl implements MusicApiService {
         SetOperations<String, String> setOperations = redisTemplate.opsForSet();
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
-        if (cacheValue != null) {
+        if (cacheValue != null && !cacheValue.isBlank()) {
             if (!commonUtil.musicIsNotFree(MusicType.WYY, id, level) && isPlay) {
                 return null;
             }

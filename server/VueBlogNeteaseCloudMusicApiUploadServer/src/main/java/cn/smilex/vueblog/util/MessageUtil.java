@@ -1,8 +1,11 @@
 package cn.smilex.vueblog.util;
 
+import cn.smilex.vueblog.Application;
+import cn.smilex.vueblog.config.MessageCode;
 import cn.smilex.vueblog.protocol.Message;
 import io.netty.channel.Channel;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static cn.smilex.vueblog.config.MessageCode.DEFAULT_REQUEST_OR_RESPONSE;
@@ -24,5 +27,16 @@ public final class MessageUtil {
 
     public static void buildAndMessageMessage(Channel channel, Integer actionType, Map<String, Object> content) {
         channel.writeAndFlush(buildMessage(actionType, content));
+    }
+
+    public static void buildAndSendResponseMessage(Channel channel, String filePath, String musicId) {
+        var responseMessageContent = new HashMap<String, Object>(1);
+        responseMessageContent.put("url", Application.COMMON_CONFIG.getUrl() + filePath);
+        responseMessageContent.put("musicId", musicId);
+        MessageUtil.buildAndMessageMessage(
+                channel,
+                MessageCode.RESPONSE_UPLOAD_RESULT,
+                responseMessageContent
+        );
     }
 }
