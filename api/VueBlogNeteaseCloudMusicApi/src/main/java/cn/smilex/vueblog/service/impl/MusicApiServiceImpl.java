@@ -15,6 +15,7 @@ import cn.smilex.vueblog.util.MessageUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.util.internal.StringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -298,42 +299,47 @@ public class MusicApiServiceImpl implements MusicApiService {
                         ))
                 );
             }
-            commonUtil.createVirtualThread(() -> {
-                try {
-                    var content = new HashMap<String, Object>(2);
-                    content.put("url", url);
-                    content.put("musicId", id);
-                    content.put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url));
-                    MessageUtil.buildAndMessageMessage(
-                            nettyClient.getChannel(),
-                            MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                            content
-                    );
-                } catch (Exception e) {
-                    log.error("", e);
-                }
-            });
+
+            if (!StringUtil.isNullOrEmpty(url)) {
+                commonUtil.createVirtualThread(() -> {
+                    try {
+                        var content = new HashMap<String, Object>(2);
+                        content.put("url", url);
+                        content.put("musicId", id);
+                        content.put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url));
+                        MessageUtil.buildAndMessageMessage(
+                                nettyClient.getChannel(),
+                                MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
+                                content
+                        );
+                    } catch (Exception e) {
+                        log.error("", e);
+                    }
+                });
+            }
             commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
             if (isPlay) {
                 return null;
             }
         } else {
             url = result.getRight();
-            commonUtil.createVirtualThread(() -> {
-                try {
-                    var content = new HashMap<String, Object>(2);
-                    content.put("url", url);
-                    content.put("musicId", id);
-                    content.put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url));
-                    MessageUtil.buildAndMessageMessage(
-                            nettyClient.getChannel(),
-                            MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                            content
-                    );
-                } catch (Exception e) {
-                    log.error("", e);
-                }
-            });
+            if (!StringUtil.isNullOrEmpty(url)) {
+                commonUtil.createVirtualThread(() -> {
+                    try {
+                        var content = new HashMap<String, Object>(2);
+                        content.put("url", url);
+                        content.put("musicId", id);
+                        content.put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url));
+                        MessageUtil.buildAndMessageMessage(
+                                nettyClient.getChannel(),
+                                MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
+                                content
+                        );
+                    } catch (Exception e) {
+                        log.error("", e);
+                    }
+                });
+            }
             commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
         }
 
