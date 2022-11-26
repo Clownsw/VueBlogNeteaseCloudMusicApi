@@ -13,7 +13,7 @@ public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof Message) {
-            var message = (Message) msg;
+            Message message = (Message) msg;
             Distribution.run(message);
         }
     }

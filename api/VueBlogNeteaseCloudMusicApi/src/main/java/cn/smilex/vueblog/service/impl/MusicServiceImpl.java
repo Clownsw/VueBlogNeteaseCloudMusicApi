@@ -106,7 +106,7 @@ public class MusicServiceImpl extends ServiceImpl<MusicDao, Music> implements Mu
      */
     @Override
     public boolean cacheMusicNotFreeInMySql(MusicType musicType, String musicId, Boolean status) {
-        var musicIdTmp = Long.parseLong(musicId);
+        Long musicIdTmp = Long.parseLong(musicId);
 
         if (getMusicCountByMusicId(musicIdTmp) > 0) {
             return true;

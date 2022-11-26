@@ -1,5 +1,6 @@
 package cn.smilex.vueblog.protocol;
 
+import cn.smilex.vueblog.util.CommonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
@@ -21,7 +22,7 @@ import java.util.List;
 public class MessageCodec extends MessageToMessageCodec<ByteBuf, Message> {
     @Override
     protected void encode(ChannelHandlerContext ctx, Message msg, List<Object> out) throws Exception {
-        byte[] jsonBytes = new ObjectMapper()
+        byte[] jsonBytes = CommonUtil.OBJECT_MAPPER
                 .writeValueAsString(msg)
                 .getBytes(StandardCharsets.UTF_8);
         ByteBuf buf = ctx.alloc()
@@ -33,10 +34,11 @@ public class MessageCodec extends MessageToMessageCodec<ByteBuf, Message> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-        var length = msg.readInt();
-        var buf = msg.readBytes(length);
+        int length = msg.readInt();
+        ByteBuf buf = msg.readBytes(length);
+
         out.add(
-                new ObjectMapper()
+                CommonUtil.OBJECT_MAPPER
                         .readValue(new String(ByteBufUtil.getBytes(buf), StandardCharsets.UTF_8), new TypeReference<Message>() {
                         })
         );

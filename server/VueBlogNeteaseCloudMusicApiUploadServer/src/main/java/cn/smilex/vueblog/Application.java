@@ -4,8 +4,8 @@ import cn.smilex.vueblog.config.CommonConfig;
 import cn.smilex.vueblog.handler.NettyChannelHandler;
 import cn.smilex.vueblog.protocol.MessageCodec;
 import cn.smilex.vueblog.protocol.ProtocolFrameHandler;
+import cn.smilex.vueblog.util.CommonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.upyun.RestManager;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -16,6 +16,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
+import sun.misc.IOUtils;
 
 import java.io.InputStream;
 
@@ -33,10 +34,11 @@ public class Application {
     public static void initConfig() {
         try (InputStream resourceAsStream = Application.class.getResourceAsStream("/application.json")) {
             assert resourceAsStream != null;
-            COMMON_CONFIG = new ObjectMapper()
+
+            COMMON_CONFIG = CommonUtil.OBJECT_MAPPER
                     .readValue(
-                            resourceAsStream.readAllBytes(),
-                            new TypeReference<>() {
+                            IOUtils.readAllBytes(resourceAsStream),
+                            new TypeReference<CommonConfig>() {
                             }
                     );
         } catch (Exception e) {
@@ -67,7 +69,7 @@ public class Application {
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<NioSocketChannel>() {
                         @Override
-                        protected void initChannel(NioSocketChannel ch) throws Exception {
+                        protected void initChannel(NioSocketChannel ch) {
                             ch.pipeline()
                                     .addLast(loggingHandler)
                                     .addLast(new ProtocolFrameHandler())

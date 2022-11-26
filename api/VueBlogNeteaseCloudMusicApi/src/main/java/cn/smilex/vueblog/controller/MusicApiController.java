@@ -2,7 +2,7 @@ package cn.smilex.vueblog.controller;
 
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.service.MusicApiService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.smilex.vueblog.util.CommonUtil;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -80,7 +80,7 @@ public class MusicApiController {
             @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
             @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset
     ) throws Exception {
-        return new ObjectMapper().writeValueAsString(
+        return CommonUtil.OBJECT_MAPPER.writeValueAsString(
                 musicApiService.vueBlogMusicList(
                         id,
                         level == null ? requestConfig.getDefaultMusicLevel() : level,

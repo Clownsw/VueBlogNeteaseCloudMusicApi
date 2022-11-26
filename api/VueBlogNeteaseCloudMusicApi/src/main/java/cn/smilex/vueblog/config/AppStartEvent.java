@@ -2,12 +2,14 @@ package cn.smilex.vueblog.config;
 
 import cn.smilex.vueblog.pojo.Music;
 import cn.smilex.vueblog.service.MusicService;
+import cn.smilex.vueblog.util.CommonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ApplicationContextEvent;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -45,18 +47,13 @@ public class AppStartEvent implements ApplicationListener<ApplicationContextEven
         List<Music> musicList = musicService.list();
 
         if (musicList.size() > 0) {
-            var valueOperations = redisTemplate.opsForValue();
-
-            int i = 0;
+            ValueOperations<String, String> valueOperations = redisTemplate.opsForValue();
 
             for (Music music : musicList) {
-                Thread.ofVirtual()
-                        .name("initMusicInfo-" + i + 1)
-                        .start(() -> {
-                            valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + music.getMusicId(), music.getMusicUrl());
-                            valueOperations.set(requestConfig.getRedisNetEaseCloudStatusCache() + music.getMusicId(), music.getNotFree().toString());
-                        });
-                i++;
+                CommonUtil.THREAD_POOL.submit(() -> {
+                    valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + music.getMusicId(), music.getMusicUrl());
+                    valueOperations.set(requestConfig.getRedisNetEaseCloudStatusCache() + music.getMusicId(), music.getNotFree().toString());
+                });
             }
         }
     }

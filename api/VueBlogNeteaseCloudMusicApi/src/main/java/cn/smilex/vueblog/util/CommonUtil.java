@@ -20,6 +20,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author smilex
@@ -30,6 +33,8 @@ import java.util.Set;
 public class CommonUtil {
     public static ConfigurableApplicationContext APPLICATION_CONTEXT = null;
     public static final String EMPTY_STRING = "";
+    public static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private RedisTemplate<String, String> redisTemplate;
     private RequestConfig requestConfig;
@@ -95,11 +100,11 @@ public class CommonUtil {
     }
 
     public JsonNode toJsonNode(String json) throws JsonProcessingException {
-        return new ObjectMapper().readTree(json);
+        return CommonUtil.OBJECT_MAPPER.readTree(json);
     }
 
     public String toJsonStr(Object object) throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(object);
+        return CommonUtil.OBJECT_MAPPER.writeValueAsString(object);
     }
 
     public Set<String> getRedisNetEaseCloudCacheSet() {
@@ -114,7 +119,7 @@ public class CommonUtil {
         }
 
         for (String json : netEaseCloudCacheSet) {
-            MusicDto musicDto = new ObjectMapper().readValue(json, new TypeReference<>() {
+            MusicDto musicDto = CommonUtil.OBJECT_MAPPER.readValue(json, new TypeReference<MusicDto>() {
             });
             if (musicDto.getId() != null && musicDto.getId().equals(id) && musicDto.getKuWoId() != null) {
                 return musicDto;
@@ -151,17 +156,16 @@ public class CommonUtil {
         }
 
         Boolean result = getMusicIsNoteFreeAndUrl(musicId, level).getLeft();
-        createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(musicType, musicId, result));
+        createTask(() -> musicService.cacheMusicNotFreeInAll(musicType, musicId, result));
         return result;
     }
 
-    public Thread createVirtualThread(Runnable runnable) {
-        return Thread.ofVirtual()
-                .start(runnable);
+    public Future<?> createTask(Runnable runnable) {
+        return CommonUtil.THREAD_POOL.submit(runnable);
     }
 
     public String parseUrlGetFileName(String url) {
-        var index = url.lastIndexOf("/") + 1;
+        int index = url.lastIndexOf("/") + 1;
         if (index != url.length()) {
             return url.substring(index);
         }

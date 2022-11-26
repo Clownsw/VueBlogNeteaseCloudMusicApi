@@ -12,12 +12,14 @@ import cn.smilex.vueblog.service.MusicApiService;
 import cn.smilex.vueblog.service.MusicService;
 import cn.smilex.vueblog.util.CommonUtil;
 import cn.smilex.vueblog.util.MessageUtil;
+import cn.smilex.vueblog.util.impl.HashMapBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.internal.StringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -29,7 +31,6 @@ import org.springframework.stereotype.Service;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -221,7 +222,7 @@ public class MusicApiServiceImpl implements MusicApiService {
             throw new RuntimeException("not found!");
         }
 
-        JsonNode root = new ObjectMapper().readTree(lyricJson);
+        JsonNode root = CommonUtil.OBJECT_MAPPER.readTree(lyricJson);
         JsonNode lrc = root.get("lrc");
         String lyric = lrc.get("lyric").asText();
         valueOperations.set(requestConfig.getRedisLyricCachePrefix() + id, lyric, Duration.ofDays(7));
@@ -242,7 +243,7 @@ public class MusicApiServiceImpl implements MusicApiService {
         SetOperations<String, String> setOperations = redisTemplate.opsForSet();
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicUrlCachePrefix() + id);
-        if (cacheValue != null && !cacheValue.isBlank()) {
+        if (StringUtils.isNotBlank(cacheValue)) {
             if (!commonUtil.musicIsNotFree(MusicType.WYY, id, level) && isPlay) {
                 return null;
             }
@@ -251,7 +252,7 @@ public class MusicApiServiceImpl implements MusicApiService {
         }
 
         cacheValue = musicService.getMusicUrlByMusicId(Long.parseLong(id));
-        if (cacheValue != null && !cacheValue.isBlank()) {
+        if (StringUtils.isNotBlank(cacheValue)) {
             if (!commonUtil.musicIsNotFree(MusicType.WYY, id, level) && isPlay) {
                 return null;
             }
@@ -269,7 +270,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                 url = kuWoSongUrl(musicDto.getKuWoId());
             } else {
                 String musicSongDetailJson = songDetail(id);
-                JsonNode musicSongDetailRoot = new ObjectMapper()
+                JsonNode musicSongDetailRoot = CommonUtil.OBJECT_MAPPER
                         .readTree(musicSongDetailJson);
                 JsonNode musicSongsOne = musicSongDetailRoot.get("songs")
                         .get(0);
@@ -281,7 +282,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                         1,
                         1
                 );
-                JsonNode kuWoSearchJsonRoot = new ObjectMapper().readTree(kuWoSearchJson);
+                JsonNode kuWoSearchJsonRoot = CommonUtil.OBJECT_MAPPER.readTree(kuWoSearchJson);
                 String kuWoMusicId = kuWoSearchJsonRoot.get("data")
                         .get("list")
                         .get(0)
@@ -301,46 +302,46 @@ public class MusicApiServiceImpl implements MusicApiService {
             }
 
             if (!StringUtil.isNullOrEmpty(url)) {
-                commonUtil.createVirtualThread(() -> {
+                commonUtil.createTask(() -> {
                     try {
-                        var content = new HashMap<String, Object>(2);
-                        content.put("url", url);
-                        content.put("musicId", id);
-                        content.put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url));
                         MessageUtil.buildAndMessageMessage(
                                 nettyClient.getChannel(),
                                 MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                                content
+                                new HashMapBuilder<String, Object>(3)
+                                        .put("url", url)
+                                        .put("musicId", id)
+                                        .put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url))
+                                        .getMap()
                         );
                     } catch (Exception e) {
                         log.error("", e);
                     }
                 });
             }
-            commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
+            commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
             if (isPlay) {
                 return null;
             }
         } else {
             url = result.getRight();
             if (!StringUtil.isNullOrEmpty(url)) {
-                commonUtil.createVirtualThread(() -> {
+                commonUtil.createTask(() -> {
                     try {
-                        var content = new HashMap<String, Object>(2);
-                        content.put("url", url);
-                        content.put("musicId", id);
-                        content.put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url));
                         MessageUtil.buildAndMessageMessage(
                                 nettyClient.getChannel(),
                                 MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                                content
+                                new HashMapBuilder<String, Object>(3)
+                                        .put("url", url)
+                                        .put("musicId", id)
+                                        .put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url))
+                                        .getMap()
                         );
                     } catch (Exception e) {
                         log.error("", e);
                     }
                 });
             }
-            commonUtil.createVirtualThread(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
+            commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
         }
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
@@ -385,11 +386,11 @@ public class MusicApiServiceImpl implements MusicApiService {
     public String kuWoSearch(String key, Integer pn, Integer fn) {
         String body = Requests.requests.request(
                 HttpRequest.build()
-                        .setUrl(String.format(KUWO_SEARCH_API, URLEncoder.encode(key, StandardCharsets.UTF_8), pn, fn))
+                        .setUrl(String.format(KUWO_SEARCH_API, URLEncoder.encode(key, "UTF8"), pn, fn))
                         .setMethod(Requests.REQUEST_METHOD.GET)
                         .setHeaders(KUWO_REQUEST_HEADER)
         ).getBody();
-        JsonNode root = new ObjectMapper().readTree(body);
+        JsonNode root = CommonUtil.OBJECT_MAPPER.readTree(body);
         JsonNode success = root.get("success");
         if (success != null && !success.asBoolean()) {
             return kuWoSearch(key, pn, fn);
@@ -453,11 +454,11 @@ public class MusicApiServiceImpl implements MusicApiService {
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicInfoCachePrefix() + id);
         if (cacheValue != null) {
-            return new ObjectMapper().readValue(cacheValue, new TypeReference<>() {
+            return CommonUtil.OBJECT_MAPPER.readValue(cacheValue, new TypeReference<ConcurrentLinkedQueue<Music>>() {
             });
         }
 
-        JsonNode root = new ObjectMapper().readTree(playListTrackAll(id, level, limit, offset));
+        JsonNode root = CommonUtil.OBJECT_MAPPER.readTree(playListTrackAll(id, level, limit, offset));
         if (root.get("code").asInt() != 200) {
             throw new RuntimeException("获取歌单列表失败!");
         }
@@ -467,7 +468,7 @@ public class MusicApiServiceImpl implements MusicApiService {
             return new ConcurrentLinkedQueue<>();
         }
 
-        var musicList = new ConcurrentLinkedQueue<Music>();
+        ConcurrentLinkedQueue<Music> musicList = new ConcurrentLinkedQueue<>();
 
         for (int i = 0; i < songs.size(); i++) {
             JsonNode musicInfo = songs.get(i);
@@ -495,7 +496,7 @@ public class MusicApiServiceImpl implements MusicApiService {
 
         valueOperations.set(
                 requestConfig.getRedisMusicInfoCachePrefix() + id,
-                new ObjectMapper().writeValueAsString(musicList),
+                CommonUtil.OBJECT_MAPPER.writeValueAsString(musicList),
                 commonUtil.parseRedisTtlType()
         );
         return musicList;
@@ -510,7 +511,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                         )
                         .setMethod(Requests.REQUEST_METHOD.POST)
         ).getBody();
-        JsonNode root = new ObjectMapper().readTree(body);
+        JsonNode root = CommonUtil.OBJECT_MAPPER.readTree(body);
         if (root.get("code").asInt() == 20001) {
             emailLogin(requestConfig.getEmail(), requestConfig.getPassWord());
             return commonServiceRequest(url);

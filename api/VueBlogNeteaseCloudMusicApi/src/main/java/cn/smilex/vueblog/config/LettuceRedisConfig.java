@@ -71,7 +71,7 @@ public class LettuceRedisConfig {
 
     @Bean
     public RedisTemplate<String, String> redisTemplate(LettuceConnectionFactory connectionFactory) {
-        var redisTemplate = new RedisTemplate<String, String>();
+        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new StringRedisSerializer());
         redisTemplate.setDefaultSerializer(RedisSerializer.json());
