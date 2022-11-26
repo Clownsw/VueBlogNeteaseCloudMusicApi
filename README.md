@@ -1,9 +1,6 @@
 # VueBlogNeteaseCloudMusicApi
 [VueBlog](https://github.com/Clownsw/VueBlog) VueBlog系统音乐播放API和缓存系统
 
-## 状态
-开发中...
-
 ## 简介
 待补充...
 
