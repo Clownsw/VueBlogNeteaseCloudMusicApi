@@ -56,4 +56,7 @@ public class RequestConfig {
 
     @Value("${api.server.redisNetEaseCloudStatusCache}")
     private String redisNetEaseCloudStatusCache;
+
+    @Value("${api.server.enableUploadServer}")
+    private Boolean enableUploadServer;
 }

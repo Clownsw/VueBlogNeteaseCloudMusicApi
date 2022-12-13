@@ -306,21 +306,23 @@ public class MusicApiServiceImpl implements MusicApiService {
             }
 
             if (!StringUtil.isNullOrEmpty(url)) {
-                commonUtil.createTask(() -> {
-                    try {
-                        MessageUtil.buildAndMessageMessage(
-                                nettyClient.getChannel(),
-                                MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                                new HashMapBuilder<String, Object>(3)
-                                        .put("url", url)
-                                        .put("musicId", id)
-                                        .put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url))
-                                        .getMap()
-                        );
-                    } catch (Exception e) {
-                        log.error("", e);
-                    }
-                });
+                if (requestConfig.getEnableUploadServer()) {
+                    commonUtil.createTask(() -> {
+                        try {
+                            MessageUtil.buildAndMessageMessage(
+                                    nettyClient.getChannel(),
+                                    MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
+                                    new HashMapBuilder<String, Object>(3)
+                                            .put("url", url)
+                                            .put("musicId", id)
+                                            .put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url))
+                                            .getMap()
+                            );
+                        } catch (Exception e) {
+                            log.error("", e);
+                        }
+                    });
+                }
             }
             commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
             if (isPlay) {
@@ -329,21 +331,23 @@ public class MusicApiServiceImpl implements MusicApiService {
         } else {
             url = result.getRight();
             if (!StringUtil.isNullOrEmpty(url)) {
-                commonUtil.createTask(() -> {
-                    try {
-                        MessageUtil.buildAndMessageMessage(
-                                nettyClient.getChannel(),
-                                MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                                new HashMapBuilder<String, Object>(3)
-                                        .put("url", url)
-                                        .put("musicId", id)
-                                        .put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url))
-                                        .getMap()
-                        );
-                    } catch (Exception e) {
-                        log.error("", e);
-                    }
-                });
+                if (requestConfig.getEnableUploadServer()) {
+                    commonUtil.createTask(() -> {
+                        try {
+                            MessageUtil.buildAndMessageMessage(
+                                    nettyClient.getChannel(),
+                                    MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
+                                    new HashMapBuilder<String, Object>(3)
+                                            .put("url", url)
+                                            .put("musicId", id)
+                                            .put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url))
+                                            .getMap()
+                            );
+                        } catch (Exception e) {
+                            log.error("", e);
+                        }
+                    });
+                }
             }
             commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
         }
