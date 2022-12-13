@@ -268,7 +268,7 @@ public class MusicApiServiceImpl implements MusicApiService {
         String url;
 
         Tuple<Boolean, String> result = commonUtil.getMusicIsNoteFreeAndUrl(id, level);
-        if (!result.getLeft()) {
+        if (!result.getLeft() || result.getRight() == null || "null".equals(result.getRight())) {
             MusicDto musicDto = commonUtil.getMusicDtoInRedisNetEaseCloudCacheSetById(Long.parseLong(id));
             if (musicDto != null) {
                 url = kuWoSongUrl(musicDto.getKuWoId());
