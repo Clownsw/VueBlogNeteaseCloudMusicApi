@@ -1,6 +1,9 @@
 package cn.smilex.vueblog.service.impl;
 
-import cn.smilex.req.*;
+import cn.smilex.req.Cookie;
+import cn.smilex.req.HttpRequest;
+import cn.smilex.req.HttpResponse;
+import cn.smilex.req.Requests;
 import cn.smilex.vueblog.config.MessageCode;
 import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.config.RequestConfig;
@@ -11,11 +14,11 @@ import cn.smilex.vueblog.netty.NettyClient;
 import cn.smilex.vueblog.service.MusicApiService;
 import cn.smilex.vueblog.service.MusicService;
 import cn.smilex.vueblog.util.CommonUtil;
+import cn.smilex.vueblog.util.KwDES;
 import cn.smilex.vueblog.util.MessageUtil;
 import cn.smilex.vueblog.util.impl.HashMapBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.internal.StringUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -31,18 +34,19 @@ import org.springframework.stereotype.Service;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static cn.smilex.req.Requests.requests;
 
 /**
  * @author smilex
  * @date 2022/9/11/18:15
  * @since 1.0
  */
+@SuppressWarnings({"unused", "Duplicatess"})
 @Slf4j
 @Service
 public class MusicApiServiceImpl implements MusicApiService {
@@ -356,21 +360,66 @@ public class MusicApiServiceImpl implements MusicApiService {
      */
     @Override
     public String kuWoSongUrl(String id) {
-        HttpRequest request = HttpRequest.build()
-                .setUrl("https://peng3.com/vip/kuwo/")
-                .setHeaders(DEFAULT_REQUEST_HEADER)
-                .setMethod(Requests.REQUEST_METHOD.POST)
-                .setBody(HttpBodyBuilder.ofString("id=" + id + "&class=mp3"));
-        HttpResponse response = Requests.requests.request(request);
-        String body = response.getBody();
-        if (body.contains("解析成功")) {
-            Pattern compile = Pattern.compile(KUWO_SEARCH_PATTERN);
-            Matcher matcher = compile.matcher(body);
-            if (matcher.find()) {
-                return matcher.group(0);
+        byte[] msg = String.format(CommonUtil.KW_REQUEST_PARAM_TEMPLATE, id).getBytes(StandardCharsets.UTF_8);
+        String param = new String(
+                Base64.getEncoder()
+                        .encode(
+                                KwDES.encrypt(
+                                        msg,
+                                        msg.length,
+                                        KwDES.SECRET_KEY,
+                                        KwDES.SECRET_KEY_LENGTH
+                                )
+                        ),
+                StandardCharsets.UTF_8
+        );
+
+        HttpResponse httpResponse = requests.request(
+                HttpRequest.build()
+                        .setMethod(Requests.REQUEST_METHOD.GET)
+                        .setUrl(String.format("http://mobi.kuwo.cn/mobi.s?f=kuwo&q=%s", param))
+                        .setHeaders(CommonUtil.KW_REQUEST_HEADERS)
+        );
+
+        try {
+            Map<String, Object> map = responseToMap(httpResponse.getBody());
+            String url;
+
+            if ((url = (String) map.get("url")) != null) {
+                return url;
+            }
+        } catch (Exception e) {
+            log.error("", e);
+        }
+
+        throw new RuntimeException("not found!");
+    }
+
+    public static Map<String, Object> responseToMap(String value) {
+        Map<String, Object> map = new HashMap<>(0);
+        List<String> valueList = new ArrayList<>();
+
+        int begin = 0;
+        int end;
+
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+
+            if (c == '\r' && value.charAt(i + 1) == '\n') {
+                end = i + 1;
+                valueList.add(value.substring(begin, end).trim());
+                begin = end;
             }
         }
-        throw new RuntimeException("not found!");
+
+        valueList.forEach(v -> {
+            String[] split = v.split("=");
+            map.put(split[0], split[1]);
+        });
+
+        valueList.clear();
+
+        return map;
     }
 
     /**

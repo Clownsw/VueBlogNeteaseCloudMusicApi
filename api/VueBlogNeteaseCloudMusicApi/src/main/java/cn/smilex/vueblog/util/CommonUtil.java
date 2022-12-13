@@ -7,6 +7,7 @@ import cn.smilex.vueblog.model.MusicDto;
 import cn.smilex.vueblog.model.Tuple;
 import cn.smilex.vueblog.service.MusicApiService;
 import cn.smilex.vueblog.service.MusicService;
+import cn.smilex.vueblog.util.impl.HashMapBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,6 +20,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,6 +37,10 @@ public class CommonUtil {
     public static final String EMPTY_STRING = "";
     public static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final HashMap<String, String> KW_REQUEST_HEADERS = (HashMap<String, String>) new HashMapBuilder<String, String>(1)
+            .put("user-agent", "okhttp/3.10.0")
+            .getMap();
+    public static final String KW_REQUEST_PARAM_TEMPLATE = "corp=kuwo&p2p=1&type=convert_url2&sig=0&format=mp3&rid=%s";
 
     private RedisTemplate<String, String> redisTemplate;
     private RequestConfig requestConfig;
