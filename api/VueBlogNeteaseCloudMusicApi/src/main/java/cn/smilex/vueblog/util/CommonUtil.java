@@ -169,12 +169,4 @@ public class CommonUtil {
     public Future<?> createTask(Runnable runnable) {
         return CommonUtil.THREAD_POOL.submit(runnable);
     }
-
-    public String parseUrlGetFileName(String url) {
-        int index = url.lastIndexOf("/") + 1;
-        if (index != url.length()) {
-            return url.substring(index);
-        }
-        throw new RuntimeException("error url!");
-    }
 }

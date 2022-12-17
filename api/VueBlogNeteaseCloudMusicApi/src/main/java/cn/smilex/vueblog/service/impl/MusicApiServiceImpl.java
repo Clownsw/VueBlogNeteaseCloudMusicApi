@@ -307,7 +307,7 @@ public class MusicApiServiceImpl implements MusicApiService {
 
             if (!StringUtil.isNullOrEmpty(url)) {
                 if (requestConfig.getEnableUploadServer()) {
-                    sendMessageToServer(url, id, "/kuwo/" + commonUtil.parseUrlGetFileName(url));
+                    sendMessageToServer(url, id, "/kuwo/");
                 }
             }
             commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
@@ -318,7 +318,7 @@ public class MusicApiServiceImpl implements MusicApiService {
             url = result.getRight();
             if (!StringUtil.isNullOrEmpty(url)) {
                 if (requestConfig.getEnableUploadServer()) {
-                    sendMessageToServer(url, id, "/wyy/" + commonUtil.parseUrlGetFileName(url));
+                    sendMessageToServer(url, id, "/wyy/");
                 }
             }
             commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
@@ -337,7 +337,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                         new HashMapBuilder<String, Object>(3)
                                 .put("url", url)
                                 .put("musicId", id)
-                                .put("filePath", filePath)
+                                .put("filePath", filePath + id)
                                 .getMap()
                 );
             } catch (Exception e) {
