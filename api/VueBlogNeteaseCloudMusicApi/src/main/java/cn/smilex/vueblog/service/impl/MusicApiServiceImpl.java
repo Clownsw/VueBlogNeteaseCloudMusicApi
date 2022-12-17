@@ -46,7 +46,7 @@ import static cn.smilex.req.Requests.requests;
  * @date 2022/9/11/18:15
  * @since 1.0
  */
-@SuppressWarnings({"unused", "Duplicatess"})
+@SuppressWarnings({"unused", "Duplicatess", "HttpUrlsUsage", "MismatchedQueryAndUpdateOfCollection"})
 @Slf4j
 @Service
 public class MusicApiServiceImpl implements MusicApiService {
@@ -57,8 +57,8 @@ public class MusicApiServiceImpl implements MusicApiService {
     private MusicService musicService;
     private NettyClient nettyClient;
 
-    private static final HashMap<String, String> DEFAULT_REQUEST_HEADER = new HashMap<>();
-    private static final HashMap<String, String> KUWO_REQUEST_HEADER = new HashMap<>();
+    private static final HashMap<String, String> DEFAULT_REQUEST_HEADER = new HashMap<>(1);
+    private static final HashMap<String, String> KUWO_REQUEST_HEADER = new HashMap<>(7);
 
     private static final String KUWO_SEARCH_PATTERN = "\\bhttp://(.*?)\\.mp3\\b";
     private static final String KUWO_SEARCH_API = "http://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key=%s&pn=%d&rn=%d";
@@ -307,21 +307,7 @@ public class MusicApiServiceImpl implements MusicApiService {
 
             if (!StringUtil.isNullOrEmpty(url)) {
                 if (requestConfig.getEnableUploadServer()) {
-                    commonUtil.createTask(() -> {
-                        try {
-                            MessageUtil.buildAndMessageMessage(
-                                    nettyClient.getChannel(),
-                                    MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                                    new HashMapBuilder<String, Object>(3)
-                                            .put("url", url)
-                                            .put("musicId", id)
-                                            .put("filePath", "/kuwo/" + commonUtil.parseUrlGetFileName(url))
-                                            .getMap()
-                            );
-                        } catch (Exception e) {
-                            log.error("", e);
-                        }
-                    });
+                    sendMessageToServer(url, id, "/kuwo/" + commonUtil.parseUrlGetFileName(url));
                 }
             }
             commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
@@ -332,21 +318,7 @@ public class MusicApiServiceImpl implements MusicApiService {
             url = result.getRight();
             if (!StringUtil.isNullOrEmpty(url)) {
                 if (requestConfig.getEnableUploadServer()) {
-                    commonUtil.createTask(() -> {
-                        try {
-                            MessageUtil.buildAndMessageMessage(
-                                    nettyClient.getChannel(),
-                                    MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                                    new HashMapBuilder<String, Object>(3)
-                                            .put("url", url)
-                                            .put("musicId", id)
-                                            .put("filePath", "/wyy/" + commonUtil.parseUrlGetFileName(url))
-                                            .getMap()
-                            );
-                        } catch (Exception e) {
-                            log.error("", e);
-                        }
-                    });
+                    sendMessageToServer(url, id, "/wyy/" + commonUtil.parseUrlGetFileName(url));
                 }
             }
             commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
@@ -354,6 +326,24 @@ public class MusicApiServiceImpl implements MusicApiService {
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
         return url;
+    }
+
+    private void sendMessageToServer(String url, String id, String filePath) {
+        commonUtil.createTask(() -> {
+            try {
+                MessageUtil.buildAndMessageMessage(
+                        nettyClient.getChannel(),
+                        MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
+                        new HashMapBuilder<String, Object>(3)
+                                .put("url", url)
+                                .put("musicId", id)
+                                .put("filePath", filePath)
+                                .getMap()
+                );
+            } catch (Exception e) {
+                log.error("", e);
+            }
+        });
     }
 
     /**

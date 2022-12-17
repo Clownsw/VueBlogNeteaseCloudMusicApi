@@ -16,7 +16,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
-import sun.misc.IOUtils;
+import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
 
@@ -37,7 +37,7 @@ public class Application {
 
             COMMON_CONFIG = CommonUtil.OBJECT_MAPPER
                     .readValue(
-                            IOUtils.readAllBytes(resourceAsStream),
+                            IOUtils.toByteArray(resourceAsStream),
                             new TypeReference<CommonConfig>() {
                             }
                     );
