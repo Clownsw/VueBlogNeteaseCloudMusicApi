@@ -162,11 +162,11 @@ public class CommonUtil {
         }
 
         Boolean result = getMusicIsNoteFreeAndUrl(musicId, level).getLeft();
-        createTask(() -> musicService.cacheMusicNotFreeInAll(musicType, musicId, result));
+        submit(() -> musicService.cacheMusicNotFreeInAll(musicType, musicId, result));
         return result;
     }
 
-    public Future<?> createTask(Runnable runnable) {
+    public static Future<?> submit(Runnable runnable) {
         return CommonUtil.THREAD_POOL.submit(runnable);
     }
 }

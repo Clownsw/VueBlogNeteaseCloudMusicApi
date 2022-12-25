@@ -24,6 +24,7 @@ import static cn.smilex.vueblog.config.MessageCode.*;
  * @date 2022/9/23/23:31
  * @since 1.0
  */
+@SuppressWarnings("ConstantConditions")
 @Slf4j
 public class Distribution {
     public static void run(ChannelHandlerContext ctx, Message message) {
@@ -33,45 +34,52 @@ public class Distribution {
 
                 final String url = (String) content.get("url");
                 final String musicId = (String) content.get("musicId");
-                final String filePath = (String) content.get("filePath");
+                String filePath = (String) content.get("filePath");
+                if (filePath.lastIndexOf(".") == -1) {
+                    filePath += ".mp3";
+                }
 
-                CommonUtil.THREAD_POOL.submit(() -> {
-                    if (BucketUtil.getFileExists(filePath)) {
-                        MessageUtil.buildAndSendResponseMessage(
-                                ctx.channel(),
-                                filePath,
-                                musicId
-                        );
-                    } else {
-                        HttpResponse httpResponse = Requests.requests
-                                .request(
-                                        HttpRequest.build()
-                                                .setUrl(url)
-                                                .setMethod(Requests.REQUEST_METHOD.GET)
-                                                .setEnableDataByte(true)
-                                );
+                if (BucketUtil.getFileExists(filePath)) {
+                    MessageUtil.buildAndSendResponseMessage(
+                            ctx.channel(),
+                            filePath,
+                            musicId
+                    );
+                } else {
+                    HttpResponse httpResponse = Requests.requests
+                            .request(
+                                    HttpRequest.build()
+                                            .setUrl(url)
+                                            .setMethod(Requests.REQUEST_METHOD.GET)
+                                            .setEnableDataByte(true)
+                            );
 
-                        try {
-                            Response response = Application.REST_MANAGER
-                                    .writeFile(
-                                            filePath,
-                                            httpResponse.getDataByte(),
-                                            new HashMapBuilder<String, String>(1)
-                                                    .put(RestManager.PARAMS.CONTENT_MD5.getValue(), UpYunUtils.md5(httpResponse.getDataByte()))
-                                                    .getMap()
-                                    );
-                            if (response.isSuccessful()) {
-                                MessageUtil.buildAndSendResponseMessage(
-                                        ctx.channel(),
+                    try {
+                        Response response = Application.REST_MANAGER
+                                .writeFile(
                                         filePath,
-                                        musicId
+                                        httpResponse.getDataByte(),
+                                        new HashMapBuilder<String, String>(1)
+                                                .put(RestManager.PARAMS.CONTENT_MD5.getValue(), UpYunUtils.md5(httpResponse.getDataByte()))
+                                                .getMap()
                                 );
-                            }
-                        } catch (Exception e) {
-                            log.error("", e);
+                        if (response.isSuccessful()) {
+                            MessageUtil.buildAndSendResponseMessage(
+                                    ctx.channel(),
+                                    filePath,
+                                    musicId
+                            );
+                        } else {
+                            String errorMsg = CommonUtil.OBJECT_MAPPER.readTree(
+                                    response.body().string()
+                            ).get("msg")
+                                    .asText();
+                            log.error("error: {}", errorMsg);
                         }
+                    } catch (Exception e) {
+                        log.error("", e);
                     }
-                });
+                }
                 break;
             }
 

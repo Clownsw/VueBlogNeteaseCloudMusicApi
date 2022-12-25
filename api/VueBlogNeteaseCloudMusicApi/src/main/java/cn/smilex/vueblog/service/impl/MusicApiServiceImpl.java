@@ -310,7 +310,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                     sendMessageToServer(url, id, "/kuwo/");
                 }
             }
-            commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
+            CommonUtil.submit(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
             if (isPlay) {
                 return null;
             }
@@ -321,7 +321,7 @@ public class MusicApiServiceImpl implements MusicApiService {
                     sendMessageToServer(url, id, "/wyy/");
                 }
             }
-            commonUtil.createTask(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
+            CommonUtil.submit(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
         }
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
@@ -329,7 +329,7 @@ public class MusicApiServiceImpl implements MusicApiService {
     }
 
     private void sendMessageToServer(String url, String id, String filePath) {
-        commonUtil.createTask(() -> {
+        CommonUtil.submit(() -> {
             try {
                 MessageUtil.buildAndMessageMessage(
                         nettyClient.getChannel(),

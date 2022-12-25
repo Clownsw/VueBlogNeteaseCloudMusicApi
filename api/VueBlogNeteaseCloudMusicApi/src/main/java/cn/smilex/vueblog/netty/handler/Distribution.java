@@ -5,7 +5,7 @@ import cn.smilex.vueblog.netty.protocol.Message;
 import cn.smilex.vueblog.pojo.Music;
 import cn.smilex.vueblog.service.MusicService;
 import cn.smilex.vueblog.util.CommonUtil;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -22,15 +22,12 @@ import static cn.smilex.vueblog.config.MessageCode.*;
 @SuppressWarnings("unchecked")
 @Slf4j
 public class Distribution {
-
-    private static final CommonUtil COMMON_UTIL;
     private static final RequestConfig REQUEST_CONFIG;
     private static final RedisTemplate<String, String> REDIS_TEMPLATE;
 
     private static final MusicService MUSIC_SERVICE;
 
     static {
-        COMMON_UTIL = CommonUtil.APPLICATION_CONTEXT.getBean(CommonUtil.class);
         REQUEST_CONFIG = CommonUtil.APPLICATION_CONTEXT
                 .getBean(RequestConfig.class);
         REDIS_TEMPLATE = (RedisTemplate<String, String>) CommonUtil.APPLICATION_CONTEXT
@@ -44,7 +41,7 @@ public class Distribution {
         log.info("{}", message);
         switch (message.getActionType()) {
             case RESPONSE_UPLOAD_RESULT: {
-                COMMON_UTIL.createTask(() -> {
+                CommonUtil.submit(() -> {
                     Map<String, Object> content = message.getContent();
                     String url = (String) content.get("url");
                     String musicId = (String) content.get("musicId");
@@ -58,9 +55,9 @@ public class Distribution {
                     music.setId(Long.parseLong(musicId));
                     music.setMusicUrl(url);
                     boolean result = MUSIC_SERVICE.update(
-                            new UpdateWrapper<Music>()
-                                    .eq("music_id", Long.parseLong(musicId))
-                                    .set("music_url", url)
+                            new LambdaUpdateWrapper<Music>()
+                                    .eq(Music::getMusicId, Long.parseLong(musicId))
+                                    .set(Music::getMusicUrl, url)
                     );
                     if (!result) {
                         log.info("update music url error!");

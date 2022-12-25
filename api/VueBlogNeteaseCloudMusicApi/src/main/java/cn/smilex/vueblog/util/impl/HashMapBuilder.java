@@ -9,10 +9,10 @@ import java.util.Map;
  * @author smilex
  */
 public class HashMapBuilder<K, V> implements MapBuilder<HashMap<K, V>, K, V> {
-    private final HashMap<K, V> map;
+    private HashMap<K, V> map;
 
     public HashMapBuilder() {
-        this.map = new HashMap<>();
+        this.map = new HashMap<>(8);
     }
 
     public HashMapBuilder(int capacity) {
@@ -27,6 +27,8 @@ public class HashMapBuilder<K, V> implements MapBuilder<HashMap<K, V>, K, V> {
 
     @Override
     public Map<K, V> getMap() {
-        return this.map;
+        HashMap<K, V> tmp = this.map;
+        this.map = null;
+        return tmp;
     }
 }

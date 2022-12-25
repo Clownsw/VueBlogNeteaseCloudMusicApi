@@ -1,6 +1,7 @@
 package cn.smilex.vueblog.handler;
 
 import cn.smilex.vueblog.protocol.Message;
+import cn.smilex.vueblog.util.CommonUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,12 +14,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NettyChannelHandler extends ChannelInboundHandlerAdapter {
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg != null) {
-            if (msg instanceof Message) {
-                Message message = (Message) msg;
-                Distribution.run(ctx, message);
-            }
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        if (msg instanceof Message) {
+            CommonUtil.submit(() -> {
+                try {
+                    Distribution.run(ctx, (Message) msg);
+                } catch (Exception e) {
+                    log.error("", e);
+                }
+            });
         }
     }
 }
