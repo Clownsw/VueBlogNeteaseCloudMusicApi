@@ -1,5 +1,6 @@
 package cn.smilex.vueblog.util;
 
+import cn.smilex.vueblog.concurrent.CounterThreadFactory;
 import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.config.RedisTtlType;
 import cn.smilex.vueblog.config.RequestConfig;
@@ -35,7 +36,9 @@ import java.util.concurrent.Future;
 public class CommonUtil {
     public static ConfigurableApplicationContext APPLICATION_CONTEXT = null;
     public static final String EMPTY_STRING = "";
-    public static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
+    public static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool(
+            new CounterThreadFactory("common-thread-pool")
+    );
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     public static final HashMap<String, String> KW_REQUEST_HEADERS = (HashMap<String, String>) new HashMapBuilder<String, String>(1)
             .put("user-agent", "okhttp/3.10.0")
