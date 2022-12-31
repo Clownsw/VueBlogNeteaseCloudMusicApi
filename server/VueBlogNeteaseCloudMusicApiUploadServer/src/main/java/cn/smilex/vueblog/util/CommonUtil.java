@@ -4,6 +4,8 @@ import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
 import cn.hutool.crypto.symmetric.SM4;
 import cn.smilex.vueblog.concurrent.CounterThreadFactory;
+import cn.smilex.vueblog.service.RemoteService;
+import cn.smilex.vueblog.service.impl.UpYunServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.concurrent.ExecutorService;
@@ -13,8 +15,9 @@ import java.util.concurrent.Future;
 /**
  * @author smilex
  */
-@SuppressWarnings("UnusedReturnValue")
+@SuppressWarnings({"UnusedReturnValue", "unused", "SpellCheckingInspection"})
 public class CommonUtil {
+    public static final String EMPTY_STRING = "";
     public static final ObjectMapper OBJECT_MAPPER;
     private static final ExecutorService THREAD_POOL;
     private static final SM4 SM_4 = new SM4(
@@ -25,6 +28,7 @@ public class CommonUtil {
                     0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x10
             }
     );
+    public static final RemoteService UPYUN_SERVICE = new UpYunServiceImpl();
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
