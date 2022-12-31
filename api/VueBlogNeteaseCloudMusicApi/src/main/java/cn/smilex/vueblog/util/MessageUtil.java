@@ -22,6 +22,8 @@ public final class MessageUtil {
     }
 
     public static void buildAndMessageMessage(Channel channel, Integer actionType, Map<String, Object> content) {
-        channel.writeAndFlush(buildMessage(actionType, content));
+        if (channel != null) {
+            channel.writeAndFlush(buildMessage(actionType, content));
+        }
     }
 }

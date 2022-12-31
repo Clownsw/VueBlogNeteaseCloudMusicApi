@@ -1,6 +1,5 @@
 package cn.smilex.vueblog.netty;
 
-import cn.smilex.vueblog.config.ErrorCode;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.netty.handler.MessageCodec;
 import cn.smilex.vueblog.netty.handler.NettyChannelHandler;
@@ -16,6 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author smilex
  * @date 2022/9/21/22:02
@@ -27,6 +29,8 @@ import org.springframework.stereotype.Component;
 public class NettyClient {
     private Bootstrap bootstrap;
     private Channel channel;
+    private final AtomicInteger count;
+    private final AtomicLong nextTime;
 
     private RequestConfig requestConfig;
 
@@ -38,8 +42,29 @@ public class NettyClient {
     public Channel getChannel() {
         if (this.channel == null || !this.channel.isActive()) {
             if (requestConfig.getEnableUploadServer()) {
-                log.error(ErrorCode.CONNECTION_EXCEPTION_CLOSE.getErrorMessage());
-                System.exit(ErrorCode.CONNECTION_EXCEPTION_CLOSE.getErrorCode());
+                if (this.nextTime.get() > System.currentTimeMillis()) {
+                    this.channel = null;
+                    return null;
+                } else {
+                    this.nextTime.set(0);
+                }
+
+                // 允许一分钟内重连三次
+                if (this.count.incrementAndGet() == 3) {
+                    // 更新下一次时间
+                    this.nextTime.set(System.currentTimeMillis() + 60000);
+
+                    // 重置计数器
+                    this.count.set(0);
+
+                    this.channel = null;
+                    return null;
+                }
+
+                try {
+                    connection("127.0.0.1", 1233);
+                } catch (InterruptedException ignore) {
+                }
             }
         }
         return channel;
@@ -47,8 +72,14 @@ public class NettyClient {
 
     @SneakyThrows
     public NettyClient() {
-        createClient();
-        connection("127.0.0.1", 1233);
+        this.count = new AtomicInteger(0);
+        this.nextTime = new AtomicLong(0);
+
+        try {
+            createClient();
+            connection("127.0.0.1", 1233);
+        } catch (Exception ignore) {
+        }
     }
 
     public void createClient() {

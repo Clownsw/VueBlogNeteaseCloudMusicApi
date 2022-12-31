@@ -3,6 +3,7 @@ package cn.smilex.vueblog.util;
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
 import cn.hutool.crypto.symmetric.SM4;
+import cn.smilex.vueblog.concurrent.CounterThreadFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.concurrent.ExecutorService;
@@ -27,7 +28,7 @@ public class CommonUtil {
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
-        THREAD_POOL = Executors.newCachedThreadPool();
+        THREAD_POOL = Executors.newCachedThreadPool(new CounterThreadFactory("common-thread-pool"));
     }
 
     /**
