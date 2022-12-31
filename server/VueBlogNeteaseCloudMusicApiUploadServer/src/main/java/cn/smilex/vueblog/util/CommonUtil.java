@@ -1,5 +1,8 @@
 package cn.smilex.vueblog.util;
 
+import cn.hutool.crypto.Mode;
+import cn.hutool.crypto.Padding;
+import cn.hutool.crypto.symmetric.SM4;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.concurrent.ExecutorService;
@@ -13,6 +16,14 @@ import java.util.concurrent.Future;
 public class CommonUtil {
     public static final ObjectMapper OBJECT_MAPPER;
     private static final ExecutorService THREAD_POOL;
+    private static final SM4 SM_4 = new SM4(
+            Mode.ECB,
+            Padding.ZeroPadding,
+            new byte[]{
+                    0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x10,
+                    0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x10
+            }
+    );
 
     static {
         OBJECT_MAPPER = new ObjectMapper();
@@ -20,12 +31,32 @@ public class CommonUtil {
     }
 
     /**
-     * 提交任务到线程池
+     * 创建一个任务到公共线程池
      *
      * @param runnable 任务
-     * @return 结果
+     * @return Future
      */
     public static Future<?> submit(Runnable runnable) {
         return THREAD_POOL.submit(runnable);
+    }
+
+    /**
+     * SM4 加密data
+     *
+     * @param data data
+     * @return encrypt data
+     */
+    public static byte[] encrypt(byte[] data) {
+        return SM_4.encrypt(data);
+    }
+
+    /**
+     * SM4 解密data
+     *
+     * @param data data
+     * @return decrypt data
+     */
+    public static byte[] decrypt(byte[] data) {
+        return SM_4.decrypt(data);
     }
 }

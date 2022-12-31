@@ -14,6 +14,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -59,7 +60,7 @@ public class Application {
         final NioEventLoopGroup masterGroup = new NioEventLoopGroup(1);
         final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
-        final LoggingHandler loggingHandler = new LoggingHandler();
+        final LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
         final MessageCodec messageCodec = new MessageCodec();
 
         try {

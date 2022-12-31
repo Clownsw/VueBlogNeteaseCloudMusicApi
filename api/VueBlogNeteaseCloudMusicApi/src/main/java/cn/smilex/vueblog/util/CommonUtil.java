@@ -1,5 +1,8 @@
 package cn.smilex.vueblog.util;
 
+import cn.hutool.crypto.Mode;
+import cn.hutool.crypto.Padding;
+import cn.hutool.crypto.symmetric.SM4;
 import cn.smilex.vueblog.concurrent.CounterThreadFactory;
 import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.config.RedisTtlType;
@@ -44,6 +47,14 @@ public class CommonUtil {
             .put("user-agent", "okhttp/3.10.0")
             .getMap();
     public static final String KW_REQUEST_PARAM_TEMPLATE = "corp=kuwo&p2p=1&type=convert_url2&sig=0&format=mp3&rid=%s";
+    private static final SM4 SM_4 = new SM4(
+            Mode.ECB,
+            Padding.ZeroPadding,
+            new byte[]{
+                    0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x10,
+                    0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x10
+            }
+    );
 
     private RedisTemplate<String, String> redisTemplate;
     private RequestConfig requestConfig;
@@ -169,7 +180,33 @@ public class CommonUtil {
         return result;
     }
 
+    /**
+     * 创建一个任务到公共线程池
+     *
+     * @param runnable 任务
+     * @return Future
+     */
     public static Future<?> submit(Runnable runnable) {
         return CommonUtil.THREAD_POOL.submit(runnable);
+    }
+
+    /**
+     * SM4 加密data
+     *
+     * @param data data
+     * @return encrypt data
+     */
+    public static byte[] encrypt(byte[] data) {
+        return SM_4.encrypt(data);
+    }
+
+    /**
+     * SM4 解密data
+     *
+     * @param data data
+     * @return decrypt data
+     */
+    public static byte[] decrypt(byte[] data) {
+        return SM_4.decrypt(data);
     }
 }
