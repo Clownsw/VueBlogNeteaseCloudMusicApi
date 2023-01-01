@@ -4,6 +4,8 @@ import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.pojo.Music;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * @author smilex
  * @date 2022/9/24/14:26
@@ -61,4 +63,11 @@ public interface MusicService extends IService<Music> {
      * @param status    是否免费
      */
     boolean cacheMusicNotFreeInAll(MusicType musicType, String musicId, Boolean status);
+
+    /**
+     * 查询 `music_url` 为空的音乐集合
+     *
+     * @return 音乐集合
+     */
+    List<Music> selectMusicUrlNullList();
 }

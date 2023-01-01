@@ -4,7 +4,6 @@ import cn.smilex.req.Cookie;
 import cn.smilex.req.HttpRequest;
 import cn.smilex.req.HttpResponse;
 import cn.smilex.req.Requests;
-import cn.smilex.vueblog.config.MessageCode;
 import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.config.RequestConfig;
 import cn.smilex.vueblog.model.Music;
@@ -16,7 +15,6 @@ import cn.smilex.vueblog.service.MusicService;
 import cn.smilex.vueblog.util.CommonUtil;
 import cn.smilex.vueblog.util.KwDES;
 import cn.smilex.vueblog.util.MessageUtil;
-import cn.smilex.vueblog.util.impl.HashMapBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.netty.util.internal.StringUtil;
@@ -307,7 +305,12 @@ public class MusicApiServiceImpl implements MusicApiService {
 
             if (!StringUtil.isNullOrEmpty(url)) {
                 if (requestConfig.getEnableUploadServer()) {
-                    sendMessageToServer(url, id, "/kuwo/");
+                    MessageUtil.sendMessageToServer(
+                            nettyClient.getChannel(),
+                            url,
+                            id,
+                            "/kuwo/"
+                    );
                 }
             }
             CommonUtil.submit(() -> musicService.cacheMusicNotFreeInAll(MusicType.KUWO, id, false));
@@ -318,7 +321,12 @@ public class MusicApiServiceImpl implements MusicApiService {
             url = result.getRight();
             if (!StringUtil.isNullOrEmpty(url)) {
                 if (requestConfig.getEnableUploadServer()) {
-                    sendMessageToServer(url, id, "/wyy/");
+                    MessageUtil.sendMessageToServer(
+                            nettyClient.getChannel(),
+                            url,
+                            id,
+                            "/wyy/"
+                    );
                 }
             }
             CommonUtil.submit(() -> musicService.cacheMusicNotFreeInAll(MusicType.WYY, id, false));
@@ -326,24 +334,6 @@ public class MusicApiServiceImpl implements MusicApiService {
 
         valueOperations.set(requestConfig.getRedisMusicUrlCachePrefix() + id, url, Duration.ofMinutes(3));
         return url;
-    }
-
-    private void sendMessageToServer(String url, String id, String filePath) {
-        CommonUtil.submit(() -> {
-            try {
-                MessageUtil.buildAndMessageMessage(
-                        nettyClient.getChannel(),
-                        MessageCode.REQUEST_DOWNLOAD_AND_UPLOAD,
-                        new HashMapBuilder<String, Object>(3)
-                                .put("url", url)
-                                .put("musicId", id)
-                                .put("filePath", filePath + id)
-                                .getMap()
-                );
-            } catch (Exception e) {
-                log.error("", e);
-            }
-        });
     }
 
     /**
@@ -429,7 +419,7 @@ public class MusicApiServiceImpl implements MusicApiService {
     public String kuWoSearch(String key, Integer pn, Integer fn) {
         String body = Requests.requests.request(
                 HttpRequest.build()
-                        .setUrl(String.format(KUWO_SEARCH_API, URLEncoder.encode(key, "UTF8"), pn, fn))
+                        .setUrl(String.format(KUWO_SEARCH_API, URLEncoder.encode(key, StandardCharsets.UTF_8), pn, fn))
                         .setMethod(Requests.REQUEST_METHOD.GET)
                         .setHeaders(KUWO_REQUEST_HEADER)
         ).getBody();
@@ -497,7 +487,7 @@ public class MusicApiServiceImpl implements MusicApiService {
 
         String cacheValue = valueOperations.get(requestConfig.getRedisMusicInfoCachePrefix() + id);
         if (cacheValue != null) {
-            return CommonUtil.OBJECT_MAPPER.readValue(cacheValue, new TypeReference<ConcurrentLinkedQueue<Music>>() {
+            return CommonUtil.OBJECT_MAPPER.readValue(cacheValue, new TypeReference<>() {
             });
         }
 

@@ -13,6 +13,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @author smilex
  * @date 2022/9/24/14:27
@@ -135,5 +137,16 @@ public class MusicServiceImpl extends ServiceImpl<MusicDao, Music> implements Mu
     public boolean cacheMusicNotFreeInAll(MusicType musicType, String musicId, Boolean status) {
         cacheMusicNotFreeInRedis(musicId, status);
         return cacheMusicNotFreeInMySql(musicType, musicId, status);
+    }
+
+    /**
+     * 查询 `music_url` 为空的音乐集合
+     *
+     * @return 音乐集合
+     */
+    @Override
+    public List<Music> selectMusicUrlNullList() {
+        return this.getBaseMapper()
+                .selectMusicUrlNullList();
     }
 }
