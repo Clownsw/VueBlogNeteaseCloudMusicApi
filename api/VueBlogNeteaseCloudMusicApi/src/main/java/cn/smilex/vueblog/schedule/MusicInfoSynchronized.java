@@ -43,7 +43,12 @@ public class MusicInfoSynchronized {
         List<Music> musicList = musicService.selectMusicUrlNullList();
         if (!musicList.isEmpty()) {
             musicList.forEach(music -> {
-                final String url = musicApiService.vueBlogSongUrl(music.toString(), "", false);
+                final String url;
+                try {
+                    url = musicApiService.vueBlogSongUrl(music.getId().toString(), "", false);
+                } catch (Exception ignore) {
+                    return;
+                }
                 MessageUtil.sendMessageToServer(
                         nettyClient.getChannel(),
                         url,
