@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommonConfig {
+    private String bindAddress;
     private String bucketName;
     private String userName;
     private String password;

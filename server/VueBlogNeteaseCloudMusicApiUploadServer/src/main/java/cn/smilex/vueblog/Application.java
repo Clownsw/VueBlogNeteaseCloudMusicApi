@@ -18,7 +18,9 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 
 /**
@@ -33,13 +35,21 @@ public class Application {
     public static RestManager REST_MANAGER = null;
 
     public static void initConfig() {
-        try (InputStream resourceAsStream = Application.class.getResourceAsStream("/application.json")) {
-            assert resourceAsStream != null;
+        String envConfigFilePath = System.getProperty("vueblogNetease.config.path");
+        try (
+                InputStream resourceAsStream = StringUtils.isBlank(envConfigFilePath) ?
+                        Application.class.getResourceAsStream("/application.json") :
+                        new FileInputStream(envConfigFilePath)
+        ) {
+            if (resourceAsStream == null) {
+                log.error("not found config!");
+                System.exit(-1);
+            }
 
             COMMON_CONFIG = CommonUtil.OBJECT_MAPPER
                     .readValue(
                             IOUtils.toByteArray(resourceAsStream),
-                            new TypeReference<CommonConfig>() {
+                            new TypeReference<>() {
                             }
                     );
         } catch (Exception e) {
@@ -78,7 +88,7 @@ public class Application {
                                     .addLast(new NettyChannelHandler());
                         }
                     })
-                    .bind("127.0.0.1", 1233)
+                    .bind(COMMON_CONFIG.getBindAddress(), 1233)
                     .sync();
             channelFuture
                     .channel()
