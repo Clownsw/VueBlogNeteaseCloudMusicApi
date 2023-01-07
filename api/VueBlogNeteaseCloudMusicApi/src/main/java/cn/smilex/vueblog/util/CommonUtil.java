@@ -209,4 +209,22 @@ public class CommonUtil {
     public static byte[] decrypt(byte[] data) {
         return SM_4.decrypt(data);
     }
+
+    /**
+     * 解析网易云响应数据获取真链
+     *
+     * @param responseData 响应数据
+     * @return 真链
+     */
+    public static String parseWyySongUrl(String responseData) {
+        try {
+            JsonNode root = CommonUtil.OBJECT_MAPPER.readTree(responseData);
+            return root.get("data")
+                    .get(0)
+                    .get("url")
+                    .asText();
+        } catch (Exception ignore) {
+        }
+        return null;
+    }
 }
