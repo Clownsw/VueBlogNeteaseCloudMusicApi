@@ -1,5 +1,6 @@
 package cn.smilex.vueblog.schedule;
 
+import cn.smilex.vueblog.config.MusicType;
 import cn.smilex.vueblog.netty.NettyClient;
 import cn.smilex.vueblog.pojo.Music;
 import cn.smilex.vueblog.service.MusicApiService;
@@ -38,14 +39,19 @@ public class MusicInfoSynchronized {
     /**
      * 同步数据库中的音乐url
      */
-    @Scheduled(cron = "0 0/2 * * * ?")
+    @Scheduled(cron = "0 0/1 * * * ?")
     public void synchronizedDataBaseMusicUrl() {
         List<Music> musicList = musicService.selectMusicUrlNullList();
         if (!musicList.isEmpty()) {
             musicList.forEach(music -> {
+                final String id = music.getId().toString();
                 final String url;
                 try {
-                    url = musicApiService.vueBlogSongUrl(music.getId().toString(), "", false);
+                    if (MusicType.KUWO.getType().equals(music.getMusicType())) {
+                        url = musicApiService.kuWoSongUrl(id);
+                    } else {
+                        url = musicApiService.vueBlogSongUrl(id, "", false);
+                    }
                 } catch (Exception ignore) {
                     return;
                 }

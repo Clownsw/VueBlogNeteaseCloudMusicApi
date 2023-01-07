@@ -5,6 +5,7 @@ import cn.smilex.vueblog.config.MessageCode;
 import cn.smilex.vueblog.protocol.Message;
 import cn.smilex.vueblog.util.impl.HashMapBuilder;
 import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 
@@ -15,6 +16,7 @@ import static cn.smilex.vueblog.config.MessageCode.DEFAULT_REQUEST_OR_RESPONSE;
  * @date 2022/9/24/11:08
  * @since 1.0
  */
+@Slf4j
 public final class MessageUtil {
 
     public static Message buildMessage(Map<String, Object> content) {
@@ -30,6 +32,13 @@ public final class MessageUtil {
     }
 
     public static void buildAndSendResponseMessage(Channel channel, String filePath, String musicId) {
+        log.info(
+                "send message to {}, filePath: {}, musicId: {}",
+                channel.remoteAddress(),
+                filePath,
+                musicId
+        );
+
         MessageUtil.buildAndMessageMessage(
                 channel,
                 MessageCode.RESPONSE_UPLOAD_RESULT,

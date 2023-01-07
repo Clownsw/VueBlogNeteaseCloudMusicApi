@@ -8,6 +8,7 @@ import cn.smilex.vueblog.service.RemoteService;
 import cn.smilex.vueblog.service.impl.UpYunServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -63,5 +64,28 @@ public class CommonUtil {
      */
     public static byte[] decrypt(byte[] data) {
         return SM_4.decrypt(data);
+    }
+
+    /**
+     * 遍历Map根据Value找Key
+     *
+     * @param map   map
+     * @param value value
+     * @param <K>   key type
+     * @param <V>   value type
+     * @return key
+     */
+    public static <K, V> K traverseMapGetKeyByValue(Map<K, V> map, Object value) {
+        if (value == null || map.size() == 0) {
+            return null;
+        }
+
+        for (K k : map.keySet()) {
+            if (value.equals(map.get(k))) {
+                return k;
+            }
+        }
+
+        return null;
     }
 }
