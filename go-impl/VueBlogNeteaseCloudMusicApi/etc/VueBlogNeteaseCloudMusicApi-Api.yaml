@@ -1,0 +1,16 @@
+Name: VueBlogNeteaseCloudMusicApi-api
+Host: 0.0.0.0
+Port: 8888
+Timeout: 60000
+
+redis:
+  addr: localhost:6379
+  password:
+
+server:
+  url: 'http://localhost:3000/'
+  serverUrl: 'http://localhost:2222/'
+  cookie:
+  email: ''
+  passWord: ''
+  redisLyricCachePrefix: 'vueblog:lyric:list:'

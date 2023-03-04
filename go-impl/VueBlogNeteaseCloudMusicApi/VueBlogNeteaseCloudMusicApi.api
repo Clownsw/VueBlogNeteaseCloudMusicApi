@@ -1,0 +1,8 @@
+type VueBlogLyricRequest {
+	Id string `form:"id"`
+}
+
+service VueBlogNeteaseCloudMusicApi-api {
+	@handler VueBlogLyric
+	get /vueblog/lyric (VueBlogLyricRequest) returns (string)
+}
