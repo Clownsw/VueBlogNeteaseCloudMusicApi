@@ -9,6 +9,9 @@ import com.upyun.RestManager;
 import com.upyun.UpYunUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
+
+import java.io.IOException;
 
 /**
  * @author smilex
@@ -36,11 +39,18 @@ public class UpYunServiceImpl implements RemoteService {
         if (response.isSuccessful()) {
             return UploadResult.empty();
         } else {
-            String errorMsg = CommonUtil.OBJECT_MAPPER.readTree(
-                    response.body().string()
-            ).get("msg")
-                    .asText();
-            return UploadResult.error(errorMsg);
+            try (ResponseBody body = response.body()) {
+                if (body != null) {
+                    String errorMsg = CommonUtil.OBJECT_MAPPER.readTree(
+                            body.string()
+                    ).get("msg")
+                            .asText();
+                    return UploadResult.error(errorMsg);
+                }
+            } catch (IOException e) {
+                log.error("", e);
+            }
+            return UploadResult.error("unknown error");
         }
     }
 
