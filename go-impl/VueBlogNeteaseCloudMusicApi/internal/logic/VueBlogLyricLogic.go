@@ -8,6 +8,7 @@ import (
 	"VueBlogNeteaseCloudMusicApi/internal/util"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -56,5 +57,6 @@ ErrorHandler:
 	return config.EmptyString, config.SystemError
 
 End:
-	return value, nil
+	value, err = util.JsonGetString(value, "lrc", "lyric")
+	return strings.ReplaceAll(value, "\n", ""), nil
 }

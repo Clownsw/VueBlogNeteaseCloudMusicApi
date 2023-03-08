@@ -1,13 +1,11 @@
 package impl
 
 import (
-	"VueBlogNeteaseCloudMusicApi/internal/config"
 	"VueBlogNeteaseCloudMusicApi/internal/svc"
 	"VueBlogNeteaseCloudMusicApi/internal/util"
 	"fmt"
 	"github.com/imroc/req/v3"
 	"github.com/zeromicro/go-zero/core/logx"
-	"strings"
 )
 
 var NeteaseMusicServiceInstance = new(NeteaseMusicService)
@@ -48,23 +46,6 @@ func (musicService *NeteaseMusicService) EmailLogin(email, password string) erro
 		return err
 	}
 
-	serverConfig := musicService.Ctx.Config.Server
-
-	cookies := response.Cookies()
-	if len(cookies) == 0 {
-		serverConfig.Cookie = config.EmptyString
-		return nil
-	}
-
-	cookieString := new(strings.Builder)
-
-	for _, cookie := range cookies {
-		cookieString.Write(util.StringToByteSlice(cookie.Name))
-		cookieString.WriteString("=")
-		cookieString.Write(util.StringToByteSlice(cookie.Value))
-		cookieString.WriteString(";")
-	}
-
-	serverConfig.Cookie = cookieString.String()
+	musicService.Ctx.Config.Server.Cookie = util.CookieSliceToString(response.Cookies())
 	return nil
 }
